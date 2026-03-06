@@ -1,6 +1,17 @@
 import { EventDetails, Invitation, GuestGroup, Table } from '../types';
 
-const API_BASE = '/api';
+const API_BASE = typeof import.meta.env.VITE_API_BASE === 'string' && import.meta.env.VITE_API_BASE
+  ? import.meta.env.VITE_API_BASE.replace(/\/$/, '')
+  : '/api';
+
+async function parseJson(res: Response) {
+  const text = await res.text();
+  try {
+    return text ? JSON.parse(text) : {};
+  } catch {
+    throw new Error(res.ok ? 'Invalid JSON response' : text || `Request failed (${res.status})`);
+  }
+}
 
 export const api = {
   // Events
@@ -10,7 +21,9 @@ export const api = {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(details),
     });
-    return res.json();
+    const data = await parseJson(res);
+    if (!res.ok) throw new Error((data as { error?: string }).error || `Failed (${res.status})`);
+    return data as EventDetails;
   },
   getEvents: async (): Promise<EventDetails[]> => {
     const res = await fetch(`${API_BASE}/events`);
