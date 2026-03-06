@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { EventDetails } from '../../types';
 import { motion } from 'motion/react';
 import { Save, Eye, FileText, MapPin, Calendar, Clock, Palette } from 'lucide-react';
@@ -23,6 +23,21 @@ export const InvitationTemplateScreen: React.FC<InvitationTemplateScreenProps> =
   });
   const [isSaving, setIsSaving] = useState(false);
   const [previewMode, setPreviewMode] = useState(false);
+
+  // Keep form in sync with saved event (e.g. after save or when event is updated)
+  useEffect(() => {
+    setFormData({
+      name: eventDetails.name,
+      date: eventDetails.date,
+      time: eventDetails.time || '',
+      venueName: eventDetails.venueName,
+      venueAddress: eventDetails.venueAddress || '',
+      venueMapUrl: eventDetails.venueMapUrl || '',
+      message: eventDetails.message || '',
+      rsvpDeadline: eventDetails.rsvpDeadline || '',
+      theme: eventDetails.theme || 'default',
+    });
+  }, [eventDetails]);
 
   const currentTheme = THEMES.find(t => t.id === formData.theme) || THEMES[0];
 

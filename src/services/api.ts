@@ -42,8 +42,14 @@ export const api = {
     const res = await fetch(`${API_BASE}/events/${eventId}/invitations`);
     return res.json();
   },
+  deleteInvitation: async (id: string): Promise<{ success: boolean }> => {
+    const res = await fetch(`${API_BASE}/invitations/${id}`, { method: 'DELETE' });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error((data as { error?: string }).error || `Delete failed (${res.status})`);
+    return data as { success: boolean };
+  },
   getInvitationByToken: async (token: string): Promise<Invitation & EventDetails> => {
-    const res = await fetch(`${API_BASE}/rsvp/${token}`);
+    const res = await fetch(`${API_BASE}/rsvp/${token}`, { cache: 'no-store' });
     return res.json();
   },
 

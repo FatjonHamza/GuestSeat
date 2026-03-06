@@ -11,7 +11,8 @@ import {
   ArrowLeft,
   LayoutGrid,
   List,
-  Filter
+  Filter,
+  Trash2
 } from 'lucide-react';
 import { motion } from 'motion/react';
 import { Invitation, Screen, RSVPStatus } from '../../types';
@@ -19,13 +20,14 @@ import { Invitation, Screen, RSVPStatus } from '../../types';
 interface InvitationsScreenProps {
   invitations: Invitation[];
   onCreateInvitation: (invitation: Partial<Invitation>) => void;
+  onDeleteInvitation: (id: string) => Promise<void>;
   onNavigate: (screen: Screen) => void;
 }
 
 type ViewMode = 'grid' | 'list';
 type FilterStatus = 'All' | RSVPStatus;
 
-export const InvitationsScreen: React.FC<InvitationsScreenProps> = ({ invitations, onCreateInvitation, onNavigate }) => {
+export const InvitationsScreen: React.FC<InvitationsScreenProps> = ({ invitations, onCreateInvitation, onDeleteInvitation, onNavigate }) => {
   const [showCreate, setShowCreate] = useState(false);
   const [viewMode, setViewMode] = useState<ViewMode>('grid');
   const [statusFilter, setStatusFilter] = useState<FilterStatus>('All');
@@ -203,8 +205,22 @@ export const InvitationsScreen: React.FC<InvitationsScreenProps> = ({ invitation
                       </>
                     )}
                   </motion.button>
-                  <button className="h-10 w-10 flex items-center justify-center rounded-lg bg-primary/10 text-primary hover:bg-primary/20 transition-all">
+                  <button className="h-10 w-10 flex items-center justify-center rounded-lg bg-primary/10 text-primary hover:bg-primary/20 transition-all" title="Dërgo">
                     <Send size={16} />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      if (window.confirm('Fshi këtë ftesë?')) {
+                        void onDeleteInvitation(invite.id);
+                      }
+                    }}
+                    className="h-10 w-10 flex items-center justify-center rounded-lg bg-slate-50 text-slate-500 hover:bg-red-50 hover:text-red-600 transition-all"
+                    title="Fshi ftesën"
+                  >
+                    <Trash2 size={16} />
                   </button>
                 </div>
               </div>
@@ -266,8 +282,20 @@ export const InvitationsScreen: React.FC<InvitationsScreenProps> = ({ invitation
                       >
                         {copiedToken === invite.token ? <CheckCircle2 size={16} /> : <Copy size={16} />}
                       </motion.button>
-                      <button className="p-2 rounded-lg bg-primary/10 text-primary hover:bg-primary/20 transition-all" title="Send">
+                      <button className="p-2 rounded-lg bg-primary/10 text-primary hover:bg-primary/20 transition-all" title="Dërgo">
                         <Send size={16} />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          if (window.confirm('Fshi këtë ftesë?')) void onDeleteInvitation(invite.id);
+                        }}
+                        className="p-2 rounded-lg bg-slate-50 text-slate-500 hover:bg-red-50 hover:text-red-600 transition-all"
+                        title="Fshi ftesën"
+                      >
+                        <Trash2 size={16} />
                       </button>
                     </div>
                   </td>

@@ -230,6 +230,17 @@ export default function App() {
     }
   };
 
+  const handleDeleteInvitation = async (id: string) => {
+    if (!eventDetails) return;
+    try {
+      await api.deleteInvitation(id);
+    } catch (err) {
+      console.error('Failed to delete invitation:', err);
+    } finally {
+      await refreshData(eventDetails.id);
+    }
+  };
+
   const handleAssign = async (groupId: string, tableId: string | undefined) => {
     if (!eventDetails) return;
     try {
@@ -362,6 +373,7 @@ export default function App() {
                 <InvitationsScreen 
                   invitations={invitations} 
                   onCreateInvitation={handleCreateInvitation}
+                  onDeleteInvitation={handleDeleteInvitation}
                   onNavigate={setScreen}
                 />
               )}

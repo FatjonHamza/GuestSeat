@@ -8,7 +8,8 @@ import { fileURLToPath } from "url";
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-const db = new Database("guestseat.db");
+const dbPath = path.join(__dirname, "guestseat.db");
+const db = new Database(dbPath);
 
 // Initialize Database
 db.exec(`
@@ -261,10 +262,24 @@ async function startServer() {
     }
   });
 
+  app.delete("/api/invitations/:id", (req, res) => {
+    try {
+      const id = (req.params.id || "").trim();
+      if (!id) return res.status(400).json({ error: "Invitation id required" });
+      const existing = db.prepare("SELECT id FROM invitations WHERE id = ?").get(id);
+      if (!existing) return res.status(404).json({ error: "Invitation not found" });
+      db.prepare("DELETE FROM guest_groups WHERE invitation_id = ?").run(id);
+      db.prepare("DELETE FROM invitations WHERE id = ?").run(id);
+      res.json({ success: true });
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
   app.get("/api/rsvp/:token", (req, res) => {
     try {
       const i = db.prepare(`
-        SELECT i.*, e.name as event_name, e.date as event_date, e.venue_name, e.venue_address, e.message
+        SELECT i.*, e.name as event_name, e.date as event_date, e.time as event_time, e.venue_name, e.venue_address, e.venue_map_url, e.message, e.rsvp_deadline, e.theme
         FROM invitations i
         JOIN events e ON i.event_id = e.id
         WHERE i.token = ?
@@ -285,9 +300,13 @@ async function startServer() {
         createdAt: i.created_at,
         name: i.event_name,
         date: i.event_date,
+        time: i.event_time,
         venueName: i.venue_name,
         venueAddress: i.venue_address,
-        message: i.message
+        venueMapUrl: i.venue_map_url,
+        message: i.message,
+        rsvpDeadline: i.rsvp_deadline,
+        theme: i.theme || 'default'
       });
     } catch (error: any) {
       res.status(500).json({ error: error.message });
