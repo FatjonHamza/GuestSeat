@@ -3,6 +3,10 @@ import { EventDetails } from '../../types';
 import { motion } from 'motion/react';
 import { Save, Eye, FileText, MapPin, Calendar, Clock, Palette } from 'lucide-react';
 import { THEMES, InvitationVector } from '../../constants';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
 
 interface InvitationTemplateScreenProps {
   eventDetails: EventDetails;
@@ -67,23 +71,24 @@ export const InvitationTemplateScreen: React.FC<InvitationTemplateScreenProps> =
           <p className="text-slate-500 mt-1">Personalizoni tekstin, ngjyrat dhe detajet që do të shohin të ftuarit tuaj.</p>
         </div>
         <div className="flex items-center gap-3">
-          <button 
+          <Button
             onClick={() => setPreviewMode(!previewMode)}
+            variant={previewMode ? 'secondary' : 'outline'}
             className={`flex items-center gap-2 px-4 py-2 rounded-lg font-bold transition-all ${
               previewMode ? 'bg-slate-100 text-slate-600' : 'bg-primary/10 text-primary'
             }`}
           >
             {previewMode ? <FileText size={18} /> : <Eye size={18} />}
             {previewMode ? 'Mënyra e Redaktimit' : 'Parashikimi Live'}
-          </button>
-          <button 
+          </Button>
+          <Button
             onClick={handleSave}
             disabled={isSaving}
             className="flex items-center gap-2 px-6 py-2 bg-primary text-white font-bold rounded-lg shadow-lg shadow-primary/20 hover:scale-105 active:scale-95 disabled:opacity-50 transition-all"
           >
             <Save size={18} />
             {isSaving ? 'Duke u ruajtur...' : 'Ruaj Ndryshimet'}
-          </button>
+          </Button>
         </div>
       </div>
 
@@ -91,16 +96,18 @@ export const InvitationTemplateScreen: React.FC<InvitationTemplateScreenProps> =
         {/* Editor Side */}
         <div className={`space-y-6 ${previewMode ? 'hidden lg:block opacity-50 pointer-events-none' : ''}`}>
           {/* Theme Selector */}
-          <div className="bg-white p-6 rounded-2xl border border-primary/10 shadow-sm space-y-4">
+          <Card className="border-primary/10 shadow-sm">
+            <CardContent className="p-6 space-y-4">
             <h2 className="text-lg font-bold flex items-center gap-2 border-b border-slate-100 pb-4">
               <Palette className="text-primary" size={20} />
               Tema e Ngjyrave
             </h2>
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
               {THEMES.map((theme) => (
-                <button
+                <Button
                   key={theme.id}
                   onClick={() => handleThemeSelect(theme.id)}
+                  variant="outline"
                   className={`p-3 rounded-xl border-2 transition-all text-left space-y-2 ${
                     formData.theme === theme.id ? 'border-primary bg-primary/5' : 'border-slate-100 hover:border-primary/30'
                   }`}
@@ -110,12 +117,14 @@ export const InvitationTemplateScreen: React.FC<InvitationTemplateScreenProps> =
                     <div className="w-4 h-4 rounded-full" style={{ backgroundColor: theme.bg }} />
                   </div>
                   <p className="text-xs font-bold truncate">{theme.name}</p>
-                </button>
+                </Button>
               ))}
             </div>
-          </div>
+            </CardContent>
+          </Card>
 
-          <div className="bg-white p-6 rounded-2xl border border-primary/10 shadow-sm space-y-6">
+          <Card className="border-primary/10 shadow-sm">
+            <CardContent className="p-6 space-y-6">
             <h2 className="text-lg font-bold flex items-center gap-2 border-b border-slate-100 pb-4">
               <FileText className="text-primary" size={20} />
               Detajet e Ngjarjes
@@ -124,20 +133,20 @@ export const InvitationTemplateScreen: React.FC<InvitationTemplateScreenProps> =
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <label className="text-xs font-bold text-slate-400 uppercase tracking-widest ml-1">Emri i Ngjarjes</label>
-                <input 
+                <Input
                   name="name"
                   value={formData.name}
                   onChange={handleChange}
-                  className="w-full h-12 px-4 rounded-xl bg-slate-50 border-none focus:ring-2 focus:ring-primary/50 transition-all font-medium"
+                  className="h-12 bg-slate-50 font-medium"
                 />
               </div>
               <div className="space-y-2">
                 <label className="text-xs font-bold text-slate-400 uppercase tracking-widest ml-1">Emri i Vendit</label>
-                <input 
+                <Input
                   name="venueName"
                   value={formData.venueName}
                   onChange={handleChange}
-                  className="w-full h-12 px-4 rounded-xl bg-slate-50 border-none focus:ring-2 focus:ring-primary/50 transition-all font-medium"
+                  className="h-12 bg-slate-50 font-medium"
                 />
               </div>
             </div>
@@ -145,22 +154,22 @@ export const InvitationTemplateScreen: React.FC<InvitationTemplateScreenProps> =
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <label className="text-xs font-bold text-slate-400 uppercase tracking-widest ml-1">Data</label>
-                <input 
+                <Input
                   type="date"
                   name="date"
                   value={formData.date}
                   onChange={handleChange}
-                  className="w-full h-12 px-4 rounded-xl bg-slate-50 border-none focus:ring-2 focus:ring-primary/50 transition-all font-medium"
+                  className="h-12 bg-slate-50 font-medium"
                 />
               </div>
               <div className="space-y-2">
                 <label className="text-xs font-bold text-slate-400 uppercase tracking-widest ml-1">Ora</label>
-                <input 
+                <Input
                   type="time"
                   name="time"
                   value={formData.time}
                   onChange={handleChange}
-                  className="w-full h-12 px-4 rounded-xl bg-slate-50 border-none focus:ring-2 focus:ring-primary/50 transition-all font-medium"
+                  className="h-12 bg-slate-50 font-medium"
                 />
               </div>
             </div>
@@ -170,21 +179,21 @@ export const InvitationTemplateScreen: React.FC<InvitationTemplateScreenProps> =
               <div className="flex gap-2">
                 <div className="relative flex-1">
                   <MapPin className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
-                  <input 
+                  <Input
                     name="venueAddress"
                     value={formData.venueAddress}
                     onChange={handleChange}
-                    className="w-full h-12 pl-12 pr-4 rounded-xl bg-slate-50 border-none focus:ring-2 focus:ring-primary/50 transition-all font-medium"
+                    className="h-12 pl-12 pr-4 bg-slate-50 font-medium"
                     placeholder="Rruga, Qyteti, Shteti"
                   />
                 </div>
                 <div className="relative w-1/3">
                   <Palette className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
-                  <input 
+                  <Input
                     name="venueMapUrl"
                     value={formData.venueMapUrl}
                     onChange={handleChange}
-                    className="w-full h-12 pl-12 pr-4 rounded-xl bg-slate-50 border-none focus:ring-2 focus:ring-primary/50 transition-all font-medium"
+                    className="h-12 pl-12 pr-4 bg-slate-50 font-medium"
                     placeholder="Linku i Hartës (URL)"
                   />
                 </div>
@@ -193,27 +202,28 @@ export const InvitationTemplateScreen: React.FC<InvitationTemplateScreenProps> =
 
             <div className="space-y-2">
               <label className="text-xs font-bold text-slate-400 uppercase tracking-widest ml-1">Mesazhi i Ftesës</label>
-              <textarea 
+              <Textarea
                 name="message"
                 value={formData.message}
                 onChange={handleChange}
                 rows={4}
-                className="w-full p-4 rounded-xl bg-slate-50 border-none focus:ring-2 focus:ring-primary/50 transition-all font-medium resize-none"
+                className="p-4 bg-slate-50 font-medium resize-none"
                 placeholder="Shkruani një mesazh mirëseardhjeje të ngrohtë për të ftuarit tuaj..."
               />
             </div>
 
             <div className="space-y-2">
               <label className="text-xs font-bold text-slate-400 uppercase tracking-widest ml-1">Afati i RSVP</label>
-              <input 
+              <Input
                 type="date"
                 name="rsvpDeadline"
                 value={formData.rsvpDeadline}
                 onChange={handleChange}
-                className="w-full h-12 px-4 rounded-xl bg-slate-50 border-none focus:ring-2 focus:ring-primary/50 transition-all font-medium"
+                className="h-12 bg-slate-50 font-medium"
               />
             </div>
-          </div>
+            </CardContent>
+          </Card>
         </div>
 
         {/* Preview Side */}
@@ -277,12 +287,12 @@ export const InvitationTemplateScreen: React.FC<InvitationTemplateScreenProps> =
               </div>
 
               <div className="space-y-4">
-                <button 
+                <Button
                   className="w-full py-4 font-black rounded-xl shadow-xl uppercase tracking-widest transition-all hover:scale-105"
                   style={{ backgroundColor: currentTheme.primary, color: currentTheme.bg, boxShadow: `0 10px 30px ${currentTheme.accent}` }}
                 >
                   RSVP Tani
-                </button>
+                </Button>
                 {formData.rsvpDeadline && (
                   <p className="text-[10px] font-bold opacity-40 uppercase tracking-widest">
                     Ju lutem përgjigjuni deri më {new Date(formData.rsvpDeadline).toLocaleDateString('sq-AL')}

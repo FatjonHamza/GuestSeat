@@ -2,12 +2,15 @@ import React, { useState } from 'react';
 import { 
   Search, 
   CheckCircle2, 
-  Users, 
   Grid, 
-  ArrowLeft,
-  UserCheck
+  UserCheck,
+  XCircle
 } from 'lucide-react';
 import { GuestGroup, Table } from '../../types';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
 
 interface CheckInScreenProps {
   groups: GuestGroup[];
@@ -30,11 +33,11 @@ export const CheckInScreen: React.FC<CheckInScreenProps> = ({ groups, tables }) 
 
       <div className="relative">
         <Search className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-400" size={24} />
-        <input 
+        <Input
           autoFocus
           value={search}
           onChange={e => setSearch(e.target.value)}
-          className="w-full h-20 pl-16 pr-6 rounded-3xl border-none bg-white shadow-xl text-xl placeholder:text-slate-300 focus:ring-4 focus:ring-primary/20 transition-all" 
+          className="h-20 pl-16 pr-6 rounded-3xl bg-white shadow-xl text-xl placeholder:text-slate-300" 
           placeholder="Kërkoni me çdo emër të të ftuarit..." 
         />
       </div>
@@ -44,7 +47,8 @@ export const CheckInScreen: React.FC<CheckInScreenProps> = ({ groups, tables }) 
           filteredGroups.map(group => {
             const table = tables.find(t => t.id === group.tableId);
             return (
-              <div key={group.id} className="bg-white p-8 rounded-3xl shadow-lg border border-primary/5 hover:border-primary/20 transition-all group">
+              <Card key={group.id} className="rounded-3xl border-primary/5 hover:border-primary/20 transition-all group">
+                <CardContent className="p-8">
                 <div className="flex items-start justify-between mb-6">
                   <div>
                     <h3 className="text-2xl font-bold text-slate-900">{group.attendees[0]}</h3>
@@ -74,11 +78,12 @@ export const CheckInScreen: React.FC<CheckInScreenProps> = ({ groups, tables }) 
                     <CheckCircle2 size={20} />
                     <span className="font-bold text-sm">RSVP e Konfirmuar</span>
                   </div>
-                  <button className="px-6 py-2 bg-primary text-white text-xs font-bold rounded-lg opacity-0 group-hover:opacity-100 transition-all">
+                  <Button className="h-8 px-4 text-xs font-bold opacity-0 group-hover:opacity-100 transition-all">
                     Shëno si i Mbërritur
-                  </button>
+                  </Button>
                 </div>
-              </div>
+                </CardContent>
+              </Card>
             );
           })
         ) : (
@@ -97,6 +102,3 @@ export const CheckInScreen: React.FC<CheckInScreenProps> = ({ groups, tables }) 
     </div>
   );
 };
-
-// Add XCircle import if not present
-import { XCircle } from 'lucide-react';

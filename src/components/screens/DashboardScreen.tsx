@@ -11,8 +11,25 @@ import {
   Table as TableIcon,
   X
 } from 'lucide-react';
-import { StatCard } from '../StatCard';
 import { Screen, Invitation, GuestGroup, Table } from '../../types';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent } from '@/components/ui/card';
+import { SectionCards } from '@/components/section-cards';
+import {
+  Table as DataTable,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table';
+import {
+  ColumnDef,
+  flexRender,
+  getCoreRowModel,
+  useReactTable,
+} from '@tanstack/react-table';
 
 interface DashboardScreenProps {
   onNavigate: (screen: Screen) => void;
@@ -62,6 +79,48 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({ onNavigate, st
     }))
   ].sort((a, b) => b.time - a.time).slice(0, 5);
 
+  type ActivityRow = (typeof activities)[number];
+
+  const activityColumns: ColumnDef<ActivityRow>[] = [
+    {
+      accessorKey: 'text',
+      header: 'Aktiviteti',
+      cell: ({ row }) => {
+        const activity = row.original;
+        return (
+          <div className="flex items-center gap-3">
+            <div className="h-8 w-8 rounded-full bg-primary/20 flex items-center justify-center text-primary">
+              <activity.icon size={16} />
+            </div>
+            <span className="font-medium text-sm">{activity.text}</span>
+          </div>
+        );
+      },
+    },
+    {
+      accessorKey: 'timeLabel',
+      header: 'Koha',
+      cell: ({ row }) => (
+        <span className="text-xs text-muted-foreground">{row.original.timeLabel}</span>
+      ),
+    },
+    {
+      accessorKey: 'status',
+      header: 'Statusi',
+      cell: ({ row }) => (
+        <Badge className={`${row.original.color} text-[10px] font-bold uppercase`}>
+          {row.original.status}
+        </Badge>
+      ),
+    },
+  ];
+
+  const activityTable = useReactTable({
+    data: activities,
+    columns: activityColumns,
+    getCoreRowModel: getCoreRowModel(),
+  });
+
   return (
     <div className="space-y-8">
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-6">
@@ -69,21 +128,21 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({ onNavigate, st
           <h1 className="text-3xl font-bold tracking-tight">Mirësevini përsëri, <span className="text-primary">Pritës</span></h1>
           <p className="text-slate-500 mt-1">Menaxhoni listën e të ftuarve dhe rregullimet e tavolinave të ngjarjes suaj.</p>
         </div>
-        <button 
+        <Button 
           onClick={() => onNavigate('Invitations')}
-          className="flex items-center gap-2 px-5 py-2.5 bg-primary text-white font-bold rounded-lg shadow-lg shadow-primary/20 transition-all hover:scale-105 active:scale-95"
+          className="h-auto px-5 py-2.5 font-bold shadow-lg shadow-primary/20 transition-all hover:scale-105 active:scale-95"
         >
           <Send size={18} />
           Dërgo Ftesë
-        </button>
+        </Button>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <StatCard label="Ftesat e Dërguara" value={stats.invitationsSent.toString()} icon={Mail} />
-        <StatCard label="RSVP të Marra" value={stats.rsvpReceived.toString()} icon={CheckCircle2} trend={`${stats.invitationsSent > 0 ? Math.round((stats.rsvpReceived / stats.invitationsSent) * 100) : 0}% Shkalla`} />
-        <StatCard label="Gjithsej të Ftuar" value={stats.totalGuests.toString()} icon={UserPlus} />
-        <StatCard label="Tavolina të Krijuara" value={stats.tablesCreated.toString()} icon={Grid} />
-      </div>
+      <SectionCards
+        invitationsSent={stats.invitationsSent}
+        invitationsResponded={stats.rsvpReceived}
+        totalGuests={stats.totalGuests}
+        tablesCreated={stats.tablesCreated}
+      />
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         <div className="lg:col-span-1 space-y-6">
@@ -97,10 +156,11 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({ onNavigate, st
               { label: 'Krijo Tavolinë', icon: TableIcon, screen: 'SeatingPlan' as Screen },
               { label: 'Regjistro të Ftuarit', icon: CheckCircle2, screen: 'CheckIn' as Screen }
             ].map((action, i) => (
-              <button 
+              <Button
                 key={i} 
                 onClick={() => onNavigate(action.screen)}
-                className="w-full flex items-center justify-between p-4 bg-white border border-primary/10 rounded-xl hover:border-primary group transition-all"
+                variant="outline"
+                className="h-auto w-full justify-between p-4 hover:border-primary group transition-all"
               >
                 <div className="flex items-center gap-3">
                   <div className="bg-primary/10 p-2 rounded-lg text-primary">
@@ -109,7 +169,7 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({ onNavigate, st
                   <span className="font-semibold">{action.label}</span>
                 </div>
                 <ChevronRight className="opacity-0 group-hover:opacity-100 transition-opacity" size={20} />
-              </button>
+              </Button>
             ))}
           </div>
         </div>
@@ -121,31 +181,48 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({ onNavigate, st
               Aktiviteti i Fundit
             </h2>
           </div>
-          <div className="bg-white border border-primary/10 rounded-xl overflow-hidden min-h-[300px]">
-            {activities.length > 0 ? (
-              <div className="divide-y divide-primary/10 w-full">
-                {activities.map((activity) => (
-                  <div key={activity.id} className="flex items-center gap-4 p-4 hover:bg-slate-50 transition-colors">
-                    <div className="h-10 w-10 rounded-full bg-primary/20 flex items-center justify-center text-primary">
-                      <activity.icon size={20} />
-                    </div>
-                    <div className="flex-1">
-                      <p className="font-medium text-sm">{activity.text}</p>
-                      <p className="text-xs text-slate-500">{activity.timeLabel}</p>
-                    </div>
-                    <div className={`px-3 py-1 ${activity.color} text-[10px] font-bold uppercase rounded-full`}>
-                      {activity.status}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <div className="flex flex-col items-center justify-center h-full min-h-[300px] text-center p-10">
-                <History size={40} className="mx-auto text-slate-200 mb-3" />
-                <p className="text-slate-400 font-medium">Nuk ka aktivitet të fundit për të treguar.</p>
-              </div>
-            )}
-          </div>
+          <Card className="overflow-hidden min-h-[300px]">
+            <CardContent className="p-0">
+              {activities.length > 0 ? (
+                <>
+                  <DataTable>
+                    <TableHeader>
+                      {activityTable.getHeaderGroups().map((headerGroup) => (
+                        <TableRow key={headerGroup.id}>
+                          {headerGroup.headers.map((header) => (
+                            <TableHead key={header.id}>
+                              {header.isPlaceholder
+                                ? null
+                                : flexRender(
+                                    header.column.columnDef.header,
+                                    header.getContext()
+                                  )}
+                            </TableHead>
+                          ))}
+                        </TableRow>
+                      ))}
+                    </TableHeader>
+                    <TableBody>
+                      {activityTable.getRowModel().rows.map((row) => (
+                        <TableRow key={row.id}>
+                          {row.getVisibleCells().map((cell) => (
+                            <TableCell key={cell.id}>
+                              {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                            </TableCell>
+                          ))}
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </DataTable>
+                </>
+              ) : (
+                <div className="flex flex-col items-center justify-center h-full min-h-[300px] text-center p-10">
+                  <History size={40} className="mx-auto text-slate-200 mb-3" />
+                  <p className="text-slate-400 font-medium">Nuk ka aktivitet të fundit për të treguar.</p>
+                </div>
+              )}
+            </CardContent>
+          </Card>
         </div>
       </div>
     </div>

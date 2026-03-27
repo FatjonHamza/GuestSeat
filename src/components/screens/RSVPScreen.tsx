@@ -14,6 +14,10 @@ import { motion, AnimatePresence } from 'motion/react';
 import { api } from '../../services/api';
 import { Invitation, EventDetails } from '../../types';
 import { THEMES, InvitationVector } from '../../constants';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
 
 interface RSVPScreenProps {
   token: string;
@@ -72,7 +76,9 @@ export const RSVPScreen: React.FC<RSVPScreenProps> = ({ token }) => {
         <XCircle size={64} className="mx-auto text-red-500 mb-4" />
         <h1 className="text-2xl font-bold text-slate-900 mb-2">Oops!</h1>
         <p className="text-slate-500 mb-6">{error || 'Ftesa nuk u gjet.'}</p>
-        <a href="/" className="inline-block px-6 py-3 bg-primary text-white font-bold rounded-xl shadow-lg shadow-primary/20">Shko në Faqen Kryesore</a>
+        <Button asChild className="px-6 py-3 font-bold shadow-lg shadow-primary/20">
+          <a href="/">Shko në Faqen Kryesore</a>
+        </Button>
       </div>
     </div>
   );
@@ -141,48 +147,52 @@ export const RSVPScreen: React.FC<RSVPScreenProps> = ({ token }) => {
                   </div>
                 </div>
 
-                <button 
+                <Button
                   onClick={() => setStep('form')}
                   className="w-full py-4 font-black rounded-xl shadow-xl uppercase tracking-widest transition-all hover:scale-105 flex items-center justify-center gap-2"
                   style={{ backgroundColor: currentTheme.primary, color: currentTheme.bg, boxShadow: `0 10px 30px ${currentTheme.accent}` }}
                 >
                   RSVP Tani
                   <ArrowRight size={20} />
-                </button>
+                </Button>
               </div>
             </motion.div>
           )}
 
           {step === 'form' && (
-            <motion.div 
+            <motion.div
               key="form"
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -20 }}
-              className="bg-white rounded-3xl shadow-2xl p-8 md:p-12 border border-slate-100"
+              className="rounded-3xl shadow-2xl"
             >
+              <Card className="border-slate-100">
+                <CardContent className="p-8 md:p-12">
               <h2 className="text-2xl font-bold text-center mb-8 text-slate-900">Konfirmoni Pjesëmarrjen Tuaj</h2>
               
               <div className="space-y-8">
                 <div className="flex gap-4">
-                  <button 
+                  <Button
                     onClick={() => setAttendance('Yes')}
+                    variant="outline"
                     className={`flex-1 py-4 rounded-2xl border-2 font-bold transition-all flex flex-col items-center gap-2 ${
                       attendance === 'Yes' ? 'border-primary bg-primary/5 text-primary' : 'border-slate-100 text-slate-400 hover:border-primary/30'
                     }`}
                   >
                     <CheckCircle2 size={24} />
                     Po vij
-                  </button>
-                  <button 
+                  </Button>
+                  <Button
                     onClick={() => setAttendance('No')}
+                    variant="outline"
                     className={`flex-1 py-4 rounded-2xl border-2 font-bold transition-all flex flex-col items-center gap-2 ${
                       attendance === 'No' ? 'border-red-500 bg-red-50 text-red-500' : 'border-slate-100 text-slate-400 hover:border-red-300'
                     }`}
                   >
                     <XCircle size={24} />
                     Nuk mundem
-                  </button>
+                  </Button>
                 </div>
 
                 {attendance === 'Yes' && (
@@ -195,14 +205,14 @@ export const RSVPScreen: React.FC<RSVPScreenProps> = ({ token }) => {
                     {Array.from({ length: invitation.allowedGuests }).map((_, i) => (
                       <div key={i} className="relative">
                         <Users className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
-                        <input 
+                        <Input
                           value={attendees[i] || ''}
                           onChange={e => {
                             const newAttendees = [...attendees];
                             newAttendees[i] = e.target.value;
                             setAttendees(newAttendees);
                           }}
-                          className="w-full pl-12 pr-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-primary/50 transition-all" 
+                          className="h-11 pl-12 pr-4" 
                           placeholder={`Emri i të Ftuarit ${i + 1}`}
                         />
                       </div>
@@ -212,30 +222,33 @@ export const RSVPScreen: React.FC<RSVPScreenProps> = ({ token }) => {
 
                 <div className="space-y-2">
                   <label className="text-sm font-bold text-slate-600 uppercase tracking-wider">Mesazh për Pritësin (Opsionale)</label>
-                  <textarea 
+                  <Textarea
                     value={note}
                     onChange={e => setNote(e.target.value)}
-                    className="w-full p-4 rounded-xl border border-slate-200 focus:ring-2 focus:ring-primary/50 transition-all h-24 resize-none" 
+                    className="h-24 p-4 resize-none" 
                     placeholder="Çdo kërkesë diete ose mesazh i veçantë..."
                   />
                 </div>
 
                 <div className="flex gap-4">
-                  <button 
+                  <Button
                     onClick={() => setStep('info')}
+                    variant="ghost"
                     className="flex-1 py-4 text-slate-500 font-bold hover:underline"
                   >
                     Mbrapa
-                  </button>
-                  <button 
+                  </Button>
+                  <Button
                     disabled={!attendance}
                     onClick={handleSubmit}
                     className="flex-[2] py-4 bg-primary text-white font-bold rounded-2xl shadow-xl shadow-primary/20 hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
                   >
                     Dërgo RSVP
-                  </button>
+                  </Button>
                 </div>
               </div>
+                </CardContent>
+              </Card>
             </motion.div>
           )}
 

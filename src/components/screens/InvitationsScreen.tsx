@@ -16,6 +16,12 @@ import {
 } from 'lucide-react';
 import { motion } from 'motion/react';
 import { Invitation, Screen, RSVPStatus } from '../../types';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 
 interface InvitationsScreenProps {
   invitations: Invitation[];
@@ -63,13 +69,13 @@ export const InvitationsScreen: React.FC<InvitationsScreenProps> = ({ invitation
           <h1 className="text-4xl font-black tracking-tight">Ftesat</h1>
           <p className="text-slate-500 text-sm">Krijoni linqe unike dhe dërgojini ato të ftuarve tuaj.</p>
         </div>
-        <button 
+        <Button
           onClick={() => setShowCreate(true)}
-          className="flex cursor-pointer items-center justify-center gap-2 rounded-lg h-12 px-6 bg-primary text-white text-sm font-bold shadow-lg shadow-primary/20 hover:scale-105 transition-all"
+          className="h-12 px-6 text-sm font-bold shadow-lg shadow-primary/20 hover:scale-105 transition-all"
         >
           <Plus size={20} />
           <span>Krijo Ftesë</span>
-        </button>
+        </Button>
       </div>
 
       <div className="flex flex-col sm:flex-row items-center justify-between gap-4 bg-white p-4 rounded-2xl border border-primary/10 shadow-sm">
@@ -77,9 +83,10 @@ export const InvitationsScreen: React.FC<InvitationsScreenProps> = ({ invitation
           <Filter size={18} className="text-slate-400 ml-2" />
           <div className="flex bg-slate-100 p-1 rounded-xl w-full sm:w-auto">
             {([['All', 'Të gjitha'], ['Draft', 'Draft'], ['Sent', 'Dërguar'], ['Responded', 'Përgjigjur']] as [FilterStatus, string][]).map(([status, label]) => (
-              <button
+              <Button
                 key={status}
                 onClick={() => setStatusFilter(status)}
+                variant={statusFilter === status ? 'outline' : 'ghost'}
                 className={`px-4 py-2 rounded-lg text-xs font-bold transition-all ${
                   statusFilter === status 
                     ? 'bg-white text-primary shadow-sm' 
@@ -87,95 +94,89 @@ export const InvitationsScreen: React.FC<InvitationsScreenProps> = ({ invitation
                 }`}
               >
                 {label}
-              </button>
+              </Button>
             ))}
           </div>
         </div>
 
         <div className="flex items-center gap-2 bg-slate-100 p-1 rounded-xl">
-          <button
+          <Button
             onClick={() => setViewMode('grid')}
+            variant={viewMode === 'grid' ? 'outline' : 'ghost'}
             className={`p-2 rounded-lg transition-all ${
               viewMode === 'grid' ? 'bg-white text-primary shadow-sm' : 'text-slate-400 hover:text-slate-600'
             }`}
           >
             <LayoutGrid size={20} />
-          </button>
-          <button
+          </Button>
+          <Button
             onClick={() => setViewMode('list')}
+            variant={viewMode === 'list' ? 'outline' : 'ghost'}
             className={`p-2 rounded-lg transition-all ${
               viewMode === 'list' ? 'bg-white text-primary shadow-sm' : 'text-slate-400 hover:text-slate-600'
             }`}
           >
             <List size={20} />
-          </button>
+          </Button>
         </div>
       </div>
 
-      {showCreate && (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden">
-            <div className="p-6 border-b border-slate-100 flex items-center justify-between">
-              <h2 className="text-xl font-bold">Ftesë e Re</h2>
-              <button onClick={() => setShowCreate(false)} className="text-slate-400 hover:text-slate-600">
-                <ArrowLeft size={20} />
-              </button>
-            </div>
-            <form onSubmit={handleSubmit} className="p-6 space-y-4">
+      <Dialog open={showCreate} onOpenChange={setShowCreate}>
+        <DialogContent className="max-w-md p-0 overflow-hidden">
+          <DialogHeader className="p-6 border-b border-slate-100">
+            <DialogTitle>Ftesë e Re</DialogTitle>
+          </DialogHeader>
+          <form onSubmit={handleSubmit} className="p-6 space-y-4">
               <div className="space-y-2">
                 <label className="text-sm font-semibold text-slate-600 uppercase tracking-wider">Emri i të Ftuarit</label>
-                <input 
+                <Input
                   required
                   value={newInvite.inviteeName}
                   onChange={e => setNewInvite({...newInvite, inviteeName: e.target.value})}
-                  className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-primary/50 transition-all" 
                   placeholder="p.sh. Arben Krasniqi"
                 />
               </div>
               <div className="space-y-2">
                 <label className="text-sm font-semibold text-slate-600 uppercase tracking-wider">Email (Opsionale)</label>
-                <input 
+                <Input
                   type="email"
                   value={newInvite.email}
                   onChange={e => setNewInvite({...newInvite, email: e.target.value})}
-                  className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-primary/50 transition-all" 
                   placeholder="arben@email.com"
                 />
               </div>
               <div className="space-y-2">
                 <label className="text-sm font-semibold text-slate-600 uppercase tracking-wider">Të ftuar të lejuar</label>
-                <input 
+                <Input
                   type="number"
                   min="1"
                   required
                   value={newInvite.allowedGuests}
                   onChange={e => setNewInvite({...newInvite, allowedGuests: parseInt(e.target.value)})}
-                  className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-primary/50 transition-all" 
                 />
               </div>
-              <button type="submit" className="w-full py-4 bg-primary text-white font-bold rounded-xl shadow-lg shadow-primary/20 hover:bg-primary/90 transition-all">
+              <Button type="submit" className="w-full h-10 font-bold shadow-lg shadow-primary/20">
                 Gjenero Ftesën
-              </button>
+              </Button>
             </form>
-          </div>
-        </div>
-      )}
+        </DialogContent>
+      </Dialog>
 
       {viewMode === 'grid' ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {filteredInvitations.map((invite) => (
-            <div key={invite.id} className="bg-white rounded-2xl border border-primary/10 shadow-sm hover:shadow-md transition-all overflow-hidden group">
-              <div className="p-6">
+            <Card key={invite.id} className="rounded-2xl border-primary/10 shadow-sm hover:shadow-md transition-all overflow-hidden group">
+              <CardContent className="p-6">
                 <div className="flex items-start justify-between mb-4">
                   <div className="h-12 w-12 rounded-xl bg-primary/10 flex items-center justify-center text-primary">
                     <Mail size={24} />
                   </div>
-                  <div className={`px-3 py-1 rounded-full text-[10px] font-bold uppercase ${
+                  <Badge className={`text-[10px] font-bold uppercase ${
                     invite.status === 'Responded' ? 'bg-green-100 text-green-700' :
                     invite.status === 'Sent' ? 'bg-blue-100 text-blue-700' : 'bg-slate-100 text-slate-600'
                   }`}>
                     {invite.status === 'Responded' ? 'Përgjigjur' : invite.status === 'Sent' ? 'Dërguar' : 'Draft'}
-                  </div>
+                  </Badge>
                 </div>
                 <h3 className="text-lg font-bold text-slate-900">{invite.inviteeName}</h3>
                 <p className="text-sm text-slate-500 mt-1">{invite.allowedGuests} të ftuar të lejuar</p>
@@ -205,10 +206,10 @@ export const InvitationsScreen: React.FC<InvitationsScreenProps> = ({ invitation
                       </>
                     )}
                   </motion.button>
-                  <button className="h-10 w-10 flex items-center justify-center rounded-lg bg-primary/10 text-primary hover:bg-primary/20 transition-all" title="Dërgo">
+                  <Button variant="ghost" size="icon" className="h-10 w-10 bg-primary/10 text-primary hover:bg-primary/20" title="Dërgo">
                     <Send size={16} />
-                  </button>
-                  <button
+                  </Button>
+                  <Button
                     type="button"
                     onClick={(e) => {
                       e.preventDefault();
@@ -217,55 +218,57 @@ export const InvitationsScreen: React.FC<InvitationsScreenProps> = ({ invitation
                         void onDeleteInvitation(invite.id);
                       }
                     }}
-                    className="h-10 w-10 flex items-center justify-center rounded-lg bg-slate-50 text-slate-500 hover:bg-red-50 hover:text-red-600 transition-all"
+                    variant="ghost"
+                    size="icon"
+                    className="h-10 w-10 bg-slate-50 text-slate-500 hover:bg-red-50 hover:text-red-600 transition-all"
                     title="Fshi ftesën"
                   >
                     <Trash2 size={16} />
-                  </button>
+                  </Button>
                 </div>
-              </div>
+              </CardContent>
               {invite.status === 'Responded' && (
                 <div className="px-6 py-3 bg-green-50 border-t border-green-100 flex items-center gap-2">
                   <CheckCircle2 size={14} className="text-green-600" />
                   <span className="text-[10px] font-bold text-green-700 uppercase">U përgjigj më {new Date(invite.respondedAt!).toLocaleDateString()}</span>
                 </div>
               )}
-            </div>
+            </Card>
           ))}
         </div>
       ) : (
-        <div className="bg-white rounded-2xl border border-primary/10 shadow-sm overflow-hidden">
-          <table className="w-full text-left border-collapse">
-            <thead>
-              <tr className="border-b border-primary/10 bg-primary/5">
-                <th className="px-6 py-4 text-xs font-bold uppercase tracking-wider text-slate-500">I ftuari</th>
-                <th className="px-6 py-4 text-xs font-bold uppercase tracking-wider text-slate-500">Statusi</th>
-                <th className="px-6 py-4 text-xs font-bold uppercase tracking-wider text-slate-500">Të ftuar</th>
-                <th className="px-6 py-4 text-xs font-bold uppercase tracking-wider text-slate-500">Email</th>
-                <th className="px-6 py-4 text-xs font-bold uppercase tracking-wider text-slate-500 text-right">Veprimet</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-primary/5">
+        <Card className="rounded-2xl border-primary/10 shadow-sm overflow-hidden">
+          <Table>
+            <TableHeader>
+              <TableRow className="bg-primary/5">
+                <TableHead className="px-6 py-4 text-xs font-bold uppercase tracking-wider text-slate-500">I ftuari</TableHead>
+                <TableHead className="px-6 py-4 text-xs font-bold uppercase tracking-wider text-slate-500">Statusi</TableHead>
+                <TableHead className="px-6 py-4 text-xs font-bold uppercase tracking-wider text-slate-500">Të ftuar</TableHead>
+                <TableHead className="px-6 py-4 text-xs font-bold uppercase tracking-wider text-slate-500">Email</TableHead>
+                <TableHead className="px-6 py-4 text-xs font-bold uppercase tracking-wider text-slate-500 text-right">Veprimet</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
               {filteredInvitations.map((invite) => (
-                <tr key={invite.id} className="hover:bg-primary/5 transition-colors">
-                  <td className="px-6 py-4">
+                <TableRow key={invite.id} className="hover:bg-primary/5 transition-colors">
+                  <TableCell className="px-6 py-4">
                     <span className="font-bold text-slate-900">{invite.inviteeName}</span>
-                  </td>
-                  <td className="px-6 py-4">
-                    <span className={`px-2 py-1 rounded-full text-[10px] font-bold uppercase ${
+                  </TableCell>
+                  <TableCell className="px-6 py-4">
+                    <Badge className={`text-[10px] font-bold uppercase ${
                       invite.status === 'Responded' ? 'bg-green-100 text-green-700' :
                       invite.status === 'Sent' ? 'bg-blue-100 text-blue-700' : 'bg-slate-100 text-slate-600'
                     }`}>
                       {invite.status === 'Responded' ? 'Përgjigjur' : invite.status === 'Sent' ? 'Dërguar' : 'Draft'}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4 text-sm text-slate-600 font-medium">
+                    </Badge>
+                  </TableCell>
+                  <TableCell className="px-6 py-4 text-sm text-slate-600 font-medium">
                     {invite.allowedGuests}
-                  </td>
-                  <td className="px-6 py-4 text-sm text-slate-500">
+                  </TableCell>
+                  <TableCell className="px-6 py-4 text-sm text-slate-500">
                     {invite.email || '-'}
-                  </td>
-                  <td className="px-6 py-4 text-right">
+                  </TableCell>
+                  <TableCell className="px-6 py-4 text-right">
                     <div className="flex items-center justify-end gap-2">
                       <motion.button
                         type="button"
@@ -282,28 +285,30 @@ export const InvitationsScreen: React.FC<InvitationsScreenProps> = ({ invitation
                       >
                         {copiedToken === invite.token ? <CheckCircle2 size={16} /> : <Copy size={16} />}
                       </motion.button>
-                      <button className="p-2 rounded-lg bg-primary/10 text-primary hover:bg-primary/20 transition-all" title="Dërgo">
+                      <Button variant="ghost" size="icon" className="p-2 rounded-lg bg-primary/10 text-primary hover:bg-primary/20 transition-all" title="Dërgo">
                         <Send size={16} />
-                      </button>
-                      <button
+                      </Button>
+                      <Button
                         type="button"
                         onClick={(e) => {
                           e.preventDefault();
                           e.stopPropagation();
                           if (window.confirm('Fshi këtë ftesë?')) void onDeleteInvitation(invite.id);
                         }}
+                        variant="ghost"
+                        size="icon"
                         className="p-2 rounded-lg bg-slate-50 text-slate-500 hover:bg-red-50 hover:text-red-600 transition-all"
                         title="Fshi ftesën"
                       >
                         <Trash2 size={16} />
-                      </button>
+                      </Button>
                     </div>
-                  </td>
-                </tr>
+                  </TableCell>
+                </TableRow>
               ))}
-            </tbody>
-          </table>
-        </div>
+            </TableBody>
+          </Table>
+        </Card>
       )}
 
       {filteredInvitations.length === 0 && (
@@ -313,9 +318,9 @@ export const InvitationsScreen: React.FC<InvitationsScreenProps> = ({ invitation
             {statusFilter === 'All' ? 'Ende nuk është krijuar asnjë ftesë.' : `Nuk u gjet asnjë ftesë ${statusFilter === 'Responded' ? 'e përgjigjur' : statusFilter === 'Sent' ? 'e dërguar' : 'draft'}.`}
           </p>
           {statusFilter === 'All' && (
-            <button onClick={() => setShowCreate(true)} className="mt-4 text-primary font-bold hover:underline">
+            <Button onClick={() => setShowCreate(true)} variant="link" className="mt-4 text-primary font-bold hover:underline">
               Krijoni ftesën tuaj të parë
-            </button>
+            </Button>
           )}
         </div>
       )}

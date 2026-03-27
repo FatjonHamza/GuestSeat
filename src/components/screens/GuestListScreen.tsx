@@ -1,6 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { 
-  Search, 
+  ArrowUpDown,
+  ChevronDown,
   UserPlus, 
   ChevronRight, 
   X,
@@ -14,6 +15,29 @@ import {
 } from 'lucide-react';
 import { GuestGroup, Table, Invitation, RSVPStatus } from '../../types';
 import { motion, AnimatePresence } from 'motion/react';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import {
+  Table as DataTable,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table';
+import { Textarea } from '@/components/ui/textarea';
+import {
+  ColumnFiltersState,
+  ColumnDef,
+  flexRender,
+  getCoreRowModel,
+  getFilteredRowModel,
+  getPaginationRowModel,
+  getSortedRowModel,
+  SortingState,
+  useReactTable,
+} from '@tanstack/react-table';
 
 type DisplayItem = {
   id: string;
@@ -38,9 +62,8 @@ interface GuestListScreenProps {
 type FilterStatus = RSVPStatus | 'All';
 
 export const GuestListScreen: React.FC<GuestListScreenProps> = ({ groups, tables, invitations, onCreateGuest, onUpdateGuest, onDeleteGuest }) => {
-  const [searchQuery, setSearchQuery] = useState('');
-  const [tableFilter, setTableFilter] = useState<string | 'all'>('all');
-  const [statusFilter, setStatusFilter] = useState<FilterStatus>('All');
+  const [sorting, setSorting] = useState<SortingState>([]);
+  const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedGuest, setSelectedGuest] = useState<DisplayItem | null>(null);
   const [detailEditAttendees, setDetailEditAttendees] = useState<string[]>([]);
@@ -145,19 +168,7 @@ export const GuestListScreen: React.FC<GuestListScreenProps> = ({ groups, tables
     setDetailEditAttendees(next);
   };
 
-  const filteredList = useMemo(() => {
-    return displayList.filter(item => {
-      const matchesSearch = 
-        item.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        item.attendees.some((a: string) => a.toLowerCase().includes(searchQuery.toLowerCase())) ||
-        (item.tableId && getTableName(item.tableId).toLowerCase().includes(searchQuery.toLowerCase()));
-      
-      const matchesTable = tableFilter === 'all' || item.tableId === tableFilter;
-      const matchesStatus = statusFilter === 'All' || item.status === statusFilter;
-      
-      return matchesSearch && matchesTable && matchesStatus;
-    });
-  }, [displayList, searchQuery, tableFilter, statusFilter, tables]);
+  const filteredList = displayList;
 
   const handleAddAttendee = () => {
     setNewGuestAttendees([...newGuestAttendees, '']);
@@ -216,6 +227,117 @@ export const GuestListScreen: React.FC<GuestListScreenProps> = ({ groups, tables
     }
   };
 
+  const columns = useMemo<ColumnDef<DisplayItem>[]>(
+    () => [
+      {
+        accessorKey: 'name',
+        header: ({ column }) => (
+          <Button
+            variant="ghost"
+            className="-ml-3"
+            onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}
+          >
+            Emri i Grupit
+            <ArrowUpDown className="ml-2 h-4 w-4" />
+          </Button>
+        ),
+        cell: ({ row }) => {
+          const item = row.original;
+          return (
+            <div className="flex items-center gap-3">
+              <div className="size-8 rounded bg-primary/20 flex items-center justify-center text-primary font-bold">
+                {item.name[0] || 'G'}
+              </div>
+              <span className="font-semibold">{item.name}</span>
+            </div>
+          );
+        },
+      },
+      {
+        accessorKey: 'attendees',
+        header: 'Pjesëmarrësit',
+        cell: ({ row }) => (
+          <span className="text-sm text-slate-600">
+            {row.original.attendees.join(', ')}
+          </span>
+        ),
+      },
+      {
+        accessorKey: 'size',
+        header: ({ column }) => (
+          <Button
+            variant="ghost"
+            className="-ml-3"
+            onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}
+          >
+            Madhësia
+            <ArrowUpDown className="ml-2 h-4 w-4" />
+          </Button>
+        ),
+        cell: ({ row }) => (
+          <span className="text-sm font-medium">{row.original.size}</span>
+        ),
+      },
+      {
+        accessorKey: 'tableId',
+        header: 'Tavolina e Atribuar',
+        cell: ({ row }) => {
+          const item = row.original;
+          return item.tableId ? (
+            <Badge className="bg-primary/10 text-primary border border-primary/20">
+              {getTableName(item.tableId)}
+            </Badge>
+          ) : (
+            <Badge variant="secondary" className="italic">
+              Të paatribuar
+            </Badge>
+          );
+        },
+      },
+      {
+        accessorKey: 'status',
+        header: 'Statusi i RSVP',
+        cell: ({ row }) => {
+          const item = row.original;
+          return (
+            <span className={`flex items-center gap-1.5 text-sm font-medium ${getStatusColor(item.status).split(' ')[0]}`}>
+              <span className={`size-2 rounded-full ${getStatusColor(item.status).split(' ')[1]}`}></span>
+              <span className="flex items-center gap-1">
+                {getStatusIcon(item.status)}
+                {item.status === 'Responded' ? 'Përgjigjur' : item.status === 'Sent' ? 'Dërguar' : 'Draft'}
+              </span>
+            </span>
+          );
+        },
+      },
+      {
+        id: 'actions',
+        header: '',
+        cell: () => (
+          <div className="flex justify-end">
+            <ChevronRight className="text-slate-300 group-hover:text-primary transition-colors" size={20} />
+          </div>
+        ),
+      },
+    ],
+    [tables]
+  );
+
+  const table = useReactTable<DisplayItem>({
+    data: filteredList,
+    columns,
+    onSortingChange: setSorting,
+    onColumnFiltersChange: setColumnFilters,
+    getCoreRowModel: getCoreRowModel(),
+    getPaginationRowModel: getPaginationRowModel(),
+    getSortedRowModel: getSortedRowModel(),
+    getFilteredRowModel: getFilteredRowModel(),
+    state: {
+      sorting,
+      columnFilters,
+    },
+  });
+
   return (
     <div className="space-y-8">
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
@@ -223,129 +345,97 @@ export const GuestListScreen: React.FC<GuestListScreenProps> = ({ groups, tables
           <h1 className="text-4xl font-black tracking-tight">Menaxhimi i të Ftuarve</h1>
           <p className="text-slate-500 text-sm">Menaxhoni RSVP-të, caktimet e ulëseve dhe grupet e të ftuarve.</p>
         </div>
-        <button 
+        <Button
           onClick={() => setIsModalOpen(true)}
-          className="flex cursor-pointer items-center justify-center gap-2 rounded-lg h-12 px-6 bg-primary text-white text-sm font-bold shadow-lg shadow-primary/20 hover:scale-105 transition-all"
+          variant="outline"
+          className="h-12 px-6 text-sm font-bold"
         >
           <UserPlus size={20} />
           <span>Shto të Ftuar</span>
-        </button>
+        </Button>
       </div>
 
       <div className="flex flex-col gap-4">
-        <div className="flex flex-col lg:flex-row gap-4">
-          <div className="flex-1">
-            <div className="relative flex items-center w-full">
-              <Search className="absolute left-4 text-slate-400" size={20} />
-              <input 
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full h-12 pl-12 pr-4 rounded-xl border-none bg-primary/5 text-slate-900 placeholder:text-slate-400 focus:ring-2 focus:ring-primary/50 transition-all" 
-                placeholder="Kërko të ftuar, grupe ose tavolina..." 
-                type="text"
-              />
-            </div>
-          </div>
-          <div className="flex flex-wrap gap-3">
-            {/* Table Filter */}
-            <div className="relative">
-              <select 
-                value={tableFilter}
-                onChange={(e) => setTableFilter(e.target.value)}
-                className="appearance-none h-12 pl-4 pr-10 rounded-xl bg-white border border-primary/20 text-sm font-medium focus:ring-2 focus:ring-primary/50 transition-all cursor-pointer"
-              >
-                <option value="all">Të gjitha Tavolinat</option>
-                <option value="">Të paatribuar</option>
-                {tables.map(table => (
-                  <option key={table.id} value={table.id}>{table.name}</option>
-                ))}
-              </select>
-              <ChevronRight className="absolute right-3 top-1/2 -translate-y-1/2 rotate-90 text-slate-400 pointer-events-none" size={16} />
-            </div>
-            
-            {/* Status Filter */}
-            <div className="relative">
-              <select 
-                value={statusFilter}
-                onChange={(e) => setStatusFilter(e.target.value as FilterStatus)}
-                className="appearance-none h-12 pl-4 pr-10 rounded-xl bg-white border border-primary/20 text-sm font-medium focus:ring-2 focus:ring-primary/50 transition-all cursor-pointer"
-              >
-                <option value="All">Të gjitha Statuseve</option>
-                <option value="Draft">Draft</option>
-                <option value="Sent">Dërguar</option>
-                <option value="Responded">Përgjigjur</option>
-              </select>
-              <ChevronRight className="absolute right-3 top-1/2 -translate-y-1/2 rotate-90 text-slate-400 pointer-events-none" size={16} />
-            </div>
-          </div>
+        <div className="flex items-center gap-2">
+          <Input
+            placeholder="Filtro të ftuarit..."
+            value={(table.getColumn('name')?.getFilterValue() as string) ?? ''}
+            onChange={(event) =>
+              table.getColumn('name')?.setFilterValue(event.target.value)
+            }
+            className="max-w-sm"
+          />
         </div>
 
-        <div className="overflow-x-auto rounded-xl border border-primary/10 bg-white shadow-sm">
-          <table className="w-full text-left border-collapse">
-            <thead>
-              <tr className="border-b border-primary/10 bg-primary/5">
-                <th className="px-6 py-4 text-xs font-bold uppercase tracking-wider text-slate-500">Emri i Grupit</th>
-                <th className="px-6 py-4 text-xs font-bold uppercase tracking-wider text-slate-500">Pjesëmarrësit</th>
-                <th className="px-6 py-4 text-xs font-bold uppercase tracking-wider text-slate-500 text-center">Madhësia</th>
-                <th className="px-6 py-4 text-xs font-bold uppercase tracking-wider text-slate-500">Tavolina e Atribuar</th>
-                <th className="px-6 py-4 text-xs font-bold uppercase tracking-wider text-slate-500">Statusi i RSVP</th>
-                <th className="px-6 py-4 text-xs font-bold uppercase tracking-wider text-slate-500"></th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-primary/5">
-              {filteredList.length > 0 ? (
-                filteredList.map((item) => (
-                  <tr
-                    key={item.id}
-                    onClick={() => openGuestDetail(item)}
-                    className="group hover:bg-primary/5 cursor-pointer transition-colors"
+        <div className="overflow-x-auto rounded-md border bg-card">
+          <DataTable>
+            <TableHeader>
+              {table.getHeaderGroups().map((headerGroup) => (
+                <TableRow key={headerGroup.id}>
+                  {headerGroup.headers.map((header) => (
+                    <TableHead key={header.id}>
+                      {header.isPlaceholder
+                        ? null
+                        : flexRender(
+                            header.column.columnDef.header,
+                            header.getContext()
+                          )}
+                    </TableHead>
+                  ))}
+                </TableRow>
+              ))}
+            </TableHeader>
+            <TableBody>
+              {table.getRowModel().rows.length ? (
+                table.getRowModel().rows.map((row) => (
+                  <TableRow
+                    key={row.id}
+                    onClick={() => openGuestDetail(row.original)}
+                    className="cursor-pointer"
                   >
-                    <td className="px-6 py-5">
-                      <div className="flex items-center gap-3">
-                        <div className="size-8 rounded bg-primary/20 flex items-center justify-center text-primary font-bold">
-                          {item.name[0] || 'G'}
-                        </div>
-                        <span className="font-semibold">{item.name}</span>
-                      </div>
-                    </td>
-                    <td className="px-6 py-5 text-sm text-slate-600">
-                      {item.attendees.join(', ')}
-                    </td>
-                    <td className="px-6 py-5 text-sm text-center font-medium">{item.size}</td>
-                    <td className="px-6 py-5">
-                      {item.tableId ? (
-                        <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-bold bg-primary/10 text-primary border border-primary/20">
-                          {getTableName(item.tableId)}
-                        </span>
-                      ) : (
-                        <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-bold bg-slate-100 text-slate-500 italic">
-                          Të paatribuar
-                        </span>
-                      )}
-                    </td>
-                    <td className="px-6 py-5">
-                      <span className={`flex items-center gap-1.5 text-sm font-medium ${getStatusColor(item.status).split(' ')[0]}`}>
-                        <span className={`size-2 rounded-full ${getStatusColor(item.status).split(' ')[1]}`}></span>
-                        <span className="flex items-center gap-1">
-                          {getStatusIcon(item.status)}
-                          {item.status === 'Responded' ? 'Përgjigjur' : item.status === 'Sent' ? 'Dërguar' : 'Draft'}
-                        </span>
-                      </span>
-                    </td>
-                    <td className="px-6 py-5 text-right">
-                      <ChevronRight className="text-slate-300 group-hover:text-primary transition-colors" size={20} />
-                    </td>
-                  </tr>
+                    {row.getVisibleCells().map((cell) => (
+                      <TableCell key={cell.id}>
+                        {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                      </TableCell>
+                    ))}
+                  </TableRow>
                 ))
               ) : (
-                <tr>
-                  <td colSpan={6} className="px-6 py-12 text-center text-slate-400 italic">
-                    Nuk u gjet asnjë i ftuar që përputhet me kriteret tuaja.
-                  </td>
-                </tr>
+                <TableRow>
+                  <TableCell
+                    colSpan={columns.length}
+                    className="h-24 text-center"
+                  >
+                    Nuk ka rezultate.
+                  </TableCell>
+                </TableRow>
               )}
-            </tbody>
-          </table>
+            </TableBody>
+          </DataTable>
+        </div>
+
+        <div className="flex items-center justify-between py-2">
+          <div className="text-sm text-muted-foreground">
+            {table.getFilteredRowModel().rows.length} rreshta.
+          </div>
+          <div className="flex items-center space-x-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => table.previousPage()}
+              disabled={!table.getCanPreviousPage()}
+            >
+              Previous
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => table.nextPage()}
+              disabled={!table.getCanNextPage()}
+            >
+              Next
+            </Button>
+          </div>
         </div>
       </div>
 
@@ -364,12 +454,13 @@ export const GuestListScreen: React.FC<GuestListScreenProps> = ({ groups, tables
                   <UserPlus className="text-primary" size={24} />
                   Shto Grupin e Ri të të Ftuarve
                 </h3>
-                <button 
+                <Button
                   onClick={() => setIsModalOpen(false)}
-                  className="p-2 hover:bg-slate-100 rounded-full transition-colors"
+                  variant="ghost"
+                  size="icon"
                 >
                   <X size={20} />
-                </button>
+                </Button>
               </div>
 
               <form onSubmit={handleSubmit} className="p-6 space-y-6">
@@ -378,32 +469,35 @@ export const GuestListScreen: React.FC<GuestListScreenProps> = ({ groups, tables
                   <div className="space-y-3">
                     {newGuestAttendees.map((attendee, index) => (
                       <div key={index} className="flex gap-2">
-                        <input 
+                        <Input
                           required
                           value={attendee}
                           onChange={(e) => handleAttendeeChange(index, e.target.value)}
-                          className="flex-1 h-12 px-4 rounded-xl bg-slate-50 border-none focus:ring-2 focus:ring-primary/50 transition-all font-medium"
+                          className="h-12 bg-slate-50 font-medium"
                           placeholder={`Emri i të Ftuarit ${index + 1}`}
                         />
                         {newGuestAttendees.length > 1 && (
-                          <button 
+                          <Button
                             type="button"
                             onClick={() => handleRemoveAttendee(index)}
-                            className="p-3 text-red-400 hover:text-red-600 hover:bg-red-50 rounded-xl transition-all"
+                            variant="ghost"
+                            size="icon"
+                            className="text-red-400 hover:text-red-600 hover:bg-red-50"
                           >
                             <Trash2 size={20} />
-                          </button>
+                          </Button>
                         )}
                       </div>
                     ))}
-                    <button 
+                    <Button
                       type="button"
                       onClick={handleAddAttendee}
-                      className="flex items-center gap-2 text-primary font-bold text-sm hover:underline py-2"
+                      variant="link"
+                      className="text-primary font-bold text-sm py-2"
                     >
                       <Plus size={16} />
                       Shto një pjesëmarrës tjetër
-                    </button>
+                    </Button>
                   </div>
                 </div>
 
@@ -423,30 +517,31 @@ export const GuestListScreen: React.FC<GuestListScreenProps> = ({ groups, tables
 
                 <div className="space-y-2">
                   <label className="text-xs font-bold text-slate-400 uppercase tracking-widest">Shënime</label>
-                  <textarea 
+                  <Textarea
                     value={newGuestNote}
                     onChange={(e) => setNewGuestNote(e.target.value)}
                     rows={3}
-                    className="w-full p-4 rounded-xl bg-slate-50 border-none focus:ring-2 focus:ring-primary/50 transition-all font-medium resize-none"
+                    className="p-4 bg-slate-50 font-medium resize-none"
                     placeholder="Kërkesat dietike, kërkesa të veçanta..."
                   />
                 </div>
 
                 <div className="flex gap-3 pt-4">
-                  <button 
+                  <Button
                     type="button"
                     onClick={() => setIsModalOpen(false)}
-                    className="flex-1 h-12 rounded-xl font-bold text-slate-500 hover:bg-slate-50 transition-all"
+                    variant="ghost"
+                    className="flex-1 h-12 font-bold text-slate-500 hover:bg-slate-50"
                   >
                     Anulo
-                  </button>
-                  <button 
+                  </Button>
+                  <Button
                     type="submit"
                     disabled={isSubmitting}
-                    className="flex-[2] h-12 bg-primary text-white font-bold rounded-xl shadow-lg shadow-primary/20 hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50 transition-all"
+                    className="flex-[2] h-12 font-bold shadow-lg shadow-primary/20 hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50 transition-all"
                   >
                     {isSubmitting ? 'Duke shtuar...' : 'Shto Grupin e të Ftuarve'}
-                  </button>
+                  </Button>
                 </div>
               </form>
             </motion.div>
@@ -470,9 +565,9 @@ export const GuestListScreen: React.FC<GuestListScreenProps> = ({ groups, tables
                   <User className="text-primary" size={22} />
                   {selectedGuest.type === 'group' ? 'Detajet e të ftuarit' : 'Ftesa'}
                 </h3>
-                <button type="button" onClick={() => setSelectedGuest(null)} className="p-2 hover:bg-slate-100 rounded-full transition-colors">
+                <Button type="button" onClick={() => setSelectedGuest(null)} variant="ghost" size="icon">
                   <X size={20} />
-                </button>
+                </Button>
               </div>
 
               {selectedGuest.type === 'invitation' ? (
@@ -494,9 +589,9 @@ export const GuestListScreen: React.FC<GuestListScreenProps> = ({ groups, tables
                   </div>
                   <p className="text-sm text-slate-500 italic">Kjo ftesë nuk ka përgjigjur ende. Nuk mund të redaktoni grupin këtu.</p>
                   <div className="pt-4">
-                    <button type="button" onClick={() => setSelectedGuest(null)} className="w-full h-12 rounded-xl font-bold text-slate-600 bg-slate-100 hover:bg-slate-200 transition-all">
+                    <Button type="button" onClick={() => setSelectedGuest(null)} variant="secondary" className="w-full h-12 font-bold text-slate-600">
                       Mbyll
-                    </button>
+                    </Button>
                   </div>
                 </div>
               ) : (
@@ -513,23 +608,23 @@ export const GuestListScreen: React.FC<GuestListScreenProps> = ({ groups, tables
                     <div className="space-y-2">
                       {detailEditAttendees.map((name, index) => (
                         <div key={index} className="flex gap-2">
-                          <input
+                          <Input
                             value={name}
                             onChange={(e) => handleDetailAttendeeChange(index, e.target.value)}
-                            className="flex-1 h-11 px-4 rounded-xl bg-slate-50 border border-slate-200 focus:ring-2 focus:ring-primary/50 font-medium text-sm"
+                            className="h-11 bg-slate-50 border-slate-200 font-medium text-sm"
                             placeholder={`Emri ${index + 1}`}
                           />
                           {detailEditAttendees.length > 1 && (
-                            <button type="button" onClick={() => handleDetailRemoveAttendee(index)} className="p-2 text-red-400 hover:bg-red-50 rounded-lg transition-colors">
+                            <Button type="button" onClick={() => handleDetailRemoveAttendee(index)} variant="ghost" size="icon" className="text-red-400 hover:bg-red-50">
                               <Trash2 size={18} />
-                            </button>
+                            </Button>
                           )}
                         </div>
                       ))}
-                      <button type="button" onClick={handleDetailAddAttendee} className="flex items-center gap-2 text-primary font-bold text-sm hover:underline py-1">
+                      <Button type="button" onClick={handleDetailAddAttendee} variant="link" className="text-primary font-bold text-sm py-1">
                         <Plus size={16} />
                         Shto pjesëmarrës
-                      </button>
+                      </Button>
                     </div>
                   </div>
                   <div className="space-y-2">
@@ -549,31 +644,32 @@ export const GuestListScreen: React.FC<GuestListScreenProps> = ({ groups, tables
                   </div>
                   <div className="space-y-2">
                     <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Shënime</label>
-                    <textarea
+                    <Textarea
                       value={detailEditNote}
                       onChange={(e) => setDetailEditNote(e.target.value)}
                       rows={3}
-                      className="w-full p-4 rounded-xl bg-slate-50 border border-slate-200 focus:ring-2 focus:ring-primary/50 font-medium text-sm resize-none"
+                      className="p-4 bg-slate-50 border-slate-200 font-medium text-sm resize-none"
                       placeholder="Kërkesa dietike, shënime..."
                     />
                   </div>
                   <div className="flex gap-3 pt-2">
-                    <button
+                    <Button
                       type="button"
                       onClick={handleDetailDelete}
                       disabled={isDetailDeleting}
-                      className="flex-1 h-12 rounded-xl font-bold text-red-600 bg-red-50 hover:bg-red-100 disabled:opacity-50 transition-all flex items-center justify-center gap-2"
+                      variant="destructive"
+                      className="flex-1 h-12 font-bold text-red-600 bg-red-50 hover:bg-red-100 disabled:opacity-50 transition-all"
                     >
                       <Trash2 size={18} />
                       {isDetailDeleting ? 'Duke fshirë...' : 'Fshi'}
-                    </button>
-                    <button
+                    </Button>
+                    <Button
                       type="submit"
                       disabled={isDetailSaving}
-                      className="flex-[2] h-12 bg-primary text-white font-bold rounded-xl shadow-lg shadow-primary/20 hover:opacity-90 disabled:opacity-50 transition-all"
+                      className="flex-[2] h-12 font-bold shadow-lg shadow-primary/20 hover:opacity-90 disabled:opacity-50 transition-all"
                     >
                       {isDetailSaving ? 'Duke ruajtur...' : 'Ruaj ndryshimet'}
-                    </button>
+                    </Button>
                   </div>
                 </form>
               )}

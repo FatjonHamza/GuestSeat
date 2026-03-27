@@ -7,31 +7,27 @@ import {
   Search, 
   Bell, 
   Settings, 
-  Plus, 
-  ChevronRight, 
-  CheckCircle2, 
-  UserPlus, 
-  Grid, 
-  History, 
-  Bolt, 
-  Send, 
-  MoreVertical, 
-  Star, 
-  Inbox, 
   Wand2, 
-  PlusCircle, 
-  GripVertical,
-  Calendar,
-  MapPin,
-  Building2,
-  PartyPopper,
-  X,
-  ArrowLeft,
   UserCheck
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { EventDetails, Invitation, GuestGroup, Table, Screen } from './types';
 import { api } from './services/api';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
+import { Card, CardContent } from '@/components/ui/card';
+import {
+  SidebarProvider,
+  Sidebar as AppSidebarContainer,
+  SidebarContent,
+  SidebarFooter,
+  SidebarGroup,
+  SidebarInset,
+  SidebarMenu,
+  SidebarMenuButton,
+  SidebarMenuItem,
+} from '@/components/ui/sidebar';
 
 // --- Screens ---
 import { DashboardScreen } from './components/screens/DashboardScreen';
@@ -43,10 +39,13 @@ import { RSVPScreen } from './components/screens/RSVPScreen';
 import { CheckInScreen } from './components/screens/CheckInScreen';
 import { LoginScreen } from './components/screens/LoginScreen';
 import { InvitationTemplateScreen } from './components/screens/InvitationTemplateScreen';
+import { AppErrorBoundary } from './components/AppErrorBoundary';
+
+const AUTH_STORAGE_KEY = 'guestseat:isLoggedIn';
 
 // --- Components ---
 
-const Sidebar = ({ currentScreen, setScreen }: { currentScreen: Screen, setScreen: (s: Screen) => void }) => {
+const AppSidebar = ({ currentScreen, setScreen }: { currentScreen: Screen, setScreen: (s: Screen) => void }) => {
   const menuItems = [
     { id: 'Dashboard', icon: LayoutDashboard, label: 'Paneli' },
     { id: 'GuestList', icon: Users, label: 'Lista e të Ftuarve' },
@@ -57,31 +56,37 @@ const Sidebar = ({ currentScreen, setScreen }: { currentScreen: Screen, setScree
   ];
 
   return (
-    <aside className="w-64 flex flex-col gap-2 p-6 border-r border-primary/10 bg-white h-full">
-      {menuItems.map((item) => (
-        <button
-          key={item.id}
-          onClick={() => setScreen(item.id as Screen)}
-          className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all ${
-            currentScreen === item.id 
-              ? 'bg-primary text-white font-semibold shadow-lg shadow-primary/20' 
-              : 'hover:bg-primary/10 text-slate-600 hover:text-primary'
-          }`}
-        >
-          <item.icon size={20} />
-          <span>{item.label}</span>
-        </button>
-      ))}
-      <div className="mt-auto pt-10">
-        <div className="p-4 rounded-xl bg-primary/5 border border-primary/20">
+    <AppSidebarContainer collapsible="none" className="border-r border-primary/10 bg-white text-left">
+      <SidebarContent className="p-4">
+        <SidebarGroup>
+          <SidebarMenu className="gap-2">
+            {menuItems.map((item) => (
+              <SidebarMenuItem key={item.id}>
+                <SidebarMenuButton
+                  isActive={currentScreen === item.id}
+                  onClick={() => setScreen(item.id as Screen)}
+                  className={`h-11 rounded-xl px-4 ${currentScreen === item.id ? 'bg-primary text-white hover:bg-primary/90 hover:text-white' : 'text-slate-600 hover:bg-primary/10 hover:text-primary'}`}
+                >
+                  <item.icon size={20} />
+                  <span>{item.label}</span>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+            ))}
+          </SidebarMenu>
+        </SidebarGroup>
+      </SidebarContent>
+      <SidebarFooter className="p-4">
+        <Card className="bg-primary/5 border-primary/20">
+          <CardContent className="p-4">
           <p className="text-[10px] font-bold text-primary uppercase tracking-wider mb-2">Plani i Pritësit</p>
           <p className="text-sm font-medium">Akses Premium në Ngjarje</p>
-          <button className="mt-3 w-full py-2 text-xs font-bold bg-primary text-white rounded-lg uppercase hover:bg-primary/90 transition-colors">
+          <Button className="mt-3 w-full text-xs font-bold uppercase">
             Përmirëso
-          </button>
-        </div>
-      </div>
-    </aside>
+          </Button>
+          </CardContent>
+        </Card>
+      </SidebarFooter>
+    </AppSidebarContainer>
   );
 };
 
@@ -99,28 +104,29 @@ const Header = ({ eventName, onLogout }: { eventName?: string, onLogout: () => v
     <div className="flex items-center gap-4">
       <div className="relative hidden sm:block">
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
-        <input 
+        <Input
           type="text" 
           placeholder="Kërko të ftuar..." 
-          className="h-10 w-64 rounded-lg border-none bg-slate-100 pl-10 text-sm focus:ring-2 focus:ring-primary transition-all"
+          className="h-10 w-64 bg-slate-100 pl-10 text-sm"
         />
       </div>
-      <button className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10 text-primary hover:bg-primary/20 transition-colors">
+      <Button variant="ghost" size="icon" className="h-10 w-10 bg-primary/10 text-primary hover:bg-primary/20">
         <Bell size={20} />
-      </button>
-      <button className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10 text-primary hover:bg-primary/20 transition-colors">
+      </Button>
+      <Button variant="ghost" size="icon" className="h-10 w-10 bg-primary/10 text-primary hover:bg-primary/20">
         <Settings size={20} />
-      </button>
-      <button 
+      </Button>
+      <Button 
         onClick={onLogout}
-        className="flex items-center gap-2 h-10 px-3 rounded-lg bg-red-50 text-red-600 hover:bg-red-100 transition-colors text-xs font-bold uppercase tracking-wider"
+        variant="destructive"
+        className="h-10 px-3 text-xs font-bold uppercase tracking-wider"
       >
         Çkyçu
-      </button>
-      <div 
-        className="h-10 w-10 rounded-full border-2 border-primary bg-cover bg-center"
-        style={{ backgroundImage: "url('https://picsum.photos/seed/host/100/100')" }}
-      />
+      </Button>
+      <Avatar className="h-10 w-10 border-2 border-primary">
+        <AvatarImage src="https://picsum.photos/seed/host/100/100" alt="Host avatar" />
+        <AvatarFallback>GS</AvatarFallback>
+      </Avatar>
     </div>
   </header>
 );
@@ -129,7 +135,13 @@ const Header = ({ eventName, onLogout }: { eventName?: string, onLogout: () => v
 
 export default function App() {
   const [screen, setScreen] = useState<Screen>('Login');
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [isLoggedIn, setIsLoggedIn] = useState<boolean>(() => {
+    try {
+      return localStorage.getItem(AUTH_STORAGE_KEY) === 'true';
+    } catch {
+      return false;
+    }
+  });
   const [eventDetails, setEventDetails] = useState<EventDetails | null>(null);
   const [groups, setGroups] = useState<GuestGroup[]>([]);
   const [tables, setTables] = useState<Table[]>([]);
@@ -298,7 +310,7 @@ export default function App() {
 
   if (loading) return (
     <div className="min-h-screen flex items-center justify-center bg-background-light">
-      <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
+      <div className="h-12 w-12 animate-spin rounded-full border-b-2 border-t-2 border-primary" />
     </div>
   );
 
@@ -307,7 +319,14 @@ export default function App() {
   }
 
   if (!isLoggedIn) {
-    return <LoginScreen onLogin={() => setIsLoggedIn(true)} />;
+    return (
+      <LoginScreen
+        onLogin={() => {
+          localStorage.setItem(AUTH_STORAGE_KEY, 'true');
+          setIsLoggedIn(true);
+        }}
+      />
+    );
   }
 
   if (screen === 'CreateEvent' || (!eventDetails && screen !== 'Login')) {
@@ -322,6 +341,7 @@ export default function App() {
   };
 
   const handleLogout = () => {
+    localStorage.removeItem(AUTH_STORAGE_KEY);
     setIsLoggedIn(false);
     setScreen('Login');
   };
@@ -329,67 +349,69 @@ export default function App() {
   return (
     <div className="flex flex-col h-screen overflow-hidden bg-background-light">
       <Header eventName={eventDetails?.name} onLogout={handleLogout} />
-      <div className="flex flex-1 overflow-hidden">
-        <Sidebar currentScreen={screen} setScreen={setScreen} />
-        <main className="flex-1 overflow-y-auto p-10 custom-scrollbar">
-          <AnimatePresence mode="wait">
-            <motion.div
-              key={screen}
-              initial={{ opacity: 0, x: 20 }}
-              animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0, x: -20 }}
-              transition={{ duration: 0.2 }}
-              className="h-full"
-            >
-              {screen === 'Dashboard' && (
-                <DashboardScreen 
-                  onNavigate={setScreen} 
-                  stats={stats} 
-                  invitations={invitations}
-                  groups={groups}
-                  tables={tables}
-                />
-              )}
-              {screen === 'GuestList' && (
-                <GuestListScreen 
-                  groups={groups} 
-                  tables={tables} 
-                  invitations={invitations}
-                  onCreateGuest={handleCreateGuest}
-                  onUpdateGuest={handleUpdateGuest}
-                  onDeleteGuest={handleDeleteGuest}
-                />
-              )}
-              {screen === 'SeatingPlan' && (
-                <SeatingPlanScreen 
-                  groups={groups} 
-                  tables={tables} 
-                  onAssign={handleAssign}
-                  onCreateTable={handleCreateTable}
-                  onCreateGuest={handleCreateGuest}
-                />
-              )}
-              {screen === 'Invitations' && (
-                <InvitationsScreen 
-                  invitations={invitations} 
-                  onCreateInvitation={handleCreateInvitation}
-                  onDeleteInvitation={handleDeleteInvitation}
-                  onNavigate={setScreen}
-                />
-              )}
-              {screen === 'CheckIn' && (
-                <CheckInScreen groups={groups} tables={tables} />
-              )}
-              {screen === 'InvitationTemplate' && eventDetails && (
-                <InvitationTemplateScreen 
-                  eventDetails={eventDetails} 
-                  onUpdate={handleUpdateEvent} 
-                />
-              )}
-            </motion.div>
-          </AnimatePresence>
-        </main>
-      </div>
+      <SidebarProvider className="flex flex-1 overflow-hidden min-h-0">
+        <AppSidebar currentScreen={screen} setScreen={setScreen} />
+        <SidebarInset className="overflow-y-auto p-10 custom-scrollbar">
+          <AppErrorBoundary>
+            <AnimatePresence mode="wait">
+              <motion.div
+                key={screen}
+                initial={{ opacity: 0, x: 20 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: -20 }}
+                transition={{ duration: 0.2 }}
+                className="h-full"
+              >
+                {screen === 'Dashboard' && (
+                  <DashboardScreen 
+                    onNavigate={setScreen} 
+                    stats={stats} 
+                    invitations={invitations}
+                    groups={groups}
+                    tables={tables}
+                  />
+                )}
+                {screen === 'GuestList' && (
+                  <GuestListScreen 
+                    groups={groups} 
+                    tables={tables} 
+                    invitations={invitations}
+                    onCreateGuest={handleCreateGuest}
+                    onUpdateGuest={handleUpdateGuest}
+                    onDeleteGuest={handleDeleteGuest}
+                  />
+                )}
+                {screen === 'SeatingPlan' && (
+                  <SeatingPlanScreen 
+                    groups={groups} 
+                    tables={tables} 
+                    onAssign={handleAssign}
+                    onCreateTable={handleCreateTable}
+                    onCreateGuest={handleCreateGuest}
+                  />
+                )}
+                {screen === 'Invitations' && (
+                  <InvitationsScreen 
+                    invitations={invitations} 
+                    onCreateInvitation={handleCreateInvitation}
+                    onDeleteInvitation={handleDeleteInvitation}
+                    onNavigate={setScreen}
+                  />
+                )}
+                {screen === 'CheckIn' && (
+                  <CheckInScreen groups={groups} tables={tables} />
+                )}
+                {screen === 'InvitationTemplate' && eventDetails && (
+                  <InvitationTemplateScreen 
+                    eventDetails={eventDetails} 
+                    onUpdate={handleUpdateEvent} 
+                  />
+                )}
+              </motion.div>
+            </AnimatePresence>
+          </AppErrorBoundary>
+        </SidebarInset>
+      </SidebarProvider>
       <footer className="border-t border-primary/10 py-4 px-10 text-center bg-white shrink-0">
         <p className="text-xs text-slate-400 font-medium">
           © 2024 GuestSeat Inc. Të gjitha të drejtat e rezervuara. {eventDetails && `| Planifikimi: ${eventDetails.name} në ${eventDetails.venueName}`}

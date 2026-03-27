@@ -9,6 +9,9 @@ import {
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { GuestGroup, Table } from '../../types';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
 
 interface SeatingPlanScreenProps {
   groups: GuestGroup[];
@@ -121,13 +124,13 @@ export const SeatingPlanScreen: React.FC<SeatingPlanScreenProps> = ({ groups, ta
           ))}
         </div>
         <div className="p-4 border-t border-primary/10">
-          <button
+          <Button
             className="w-full flex items-center justify-center gap-2 rounded-lg bg-primary py-2.5 text-sm font-bold text-white hover:bg-primary/90 transition-all"
             onClick={() => onCreateGuest({ attendees: ['Mysafir i ri'] })}
           >
             <UserPlus size={18} />
             Shto mysafirin e ri
-          </button>
+          </Button>
         </div>
       </aside>
 
@@ -139,7 +142,7 @@ export const SeatingPlanScreen: React.FC<SeatingPlanScreenProps> = ({ groups, ta
               <p className="text-slate-500 mt-1">Menaxhoni caktimet e tavolinave dhe kapacitetin</p>
             </div>
             <div className="flex gap-3">
-              <button
+              <Button
                 className="flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-bold text-white hover:bg-primary/90 transition-all"
                 onClick={() => {
                   setNewTableName(`Tavolina ${tables.length + 1}`);
@@ -149,7 +152,7 @@ export const SeatingPlanScreen: React.FC<SeatingPlanScreenProps> = ({ groups, ta
               >
                 <PlusCircle size={18} />
                 Shto Tavolinë
-              </button>
+              </Button>
             </div>
           </div>
 
@@ -162,7 +165,7 @@ export const SeatingPlanScreen: React.FC<SeatingPlanScreenProps> = ({ groups, ta
               const isOver = dragOverTableId === table.id;
 
               return (
-                <div 
+                <Card
                   key={table.id}
                   onDragOver={(e) => { handleDragOver(e); setDragOverTableId(table.id); }}
                   onDragLeave={() => setDragOverTableId(null)}
@@ -192,7 +195,7 @@ export const SeatingPlanScreen: React.FC<SeatingPlanScreenProps> = ({ groups, ta
                         </p>
                       </div>
                     </div>
-                    <button className="text-slate-400 hover:text-slate-600"><MoreVertical size={18} /></button>
+                    <Button variant="ghost" size="icon" className="text-slate-400 hover:text-slate-600"><MoreVertical size={18} /></Button>
                   </div>
                   
                   <div className="p-4 space-y-2 min-h-[140px] bg-slate-50/50">
@@ -211,12 +214,14 @@ export const SeatingPlanScreen: React.FC<SeatingPlanScreenProps> = ({ groups, ta
                             <span className={`text-xs font-bold text-slate-400`}>
                               {group.groupSize}p
                             </span>
-                            <button 
+                            <Button
+                              variant="ghost"
+                              size="icon-xs"
                               onClick={() => onAssign(group.id, undefined)}
                               className="opacity-0 group-hover:opacity-100 text-red-400 hover:text-red-600 transition-all"
                             >
                               <X size={14} />
-                            </button>
+                            </Button>
                           </div>
                         </div>
                       ))
@@ -232,15 +237,15 @@ export const SeatingPlanScreen: React.FC<SeatingPlanScreenProps> = ({ groups, ta
                       Veprimi i kërkuar: Zhvendosni {currentTotal - table.capacity} të ftuar
                     </div>
                   )}
-                </div>
+                </Card>
               );
             })}
-            <button className="rounded-xl border-2 border-dashed border-primary/30 hover:border-primary/60 hover:bg-primary/5 transition-all flex flex-col items-center justify-center min-h-[250px] group">
+            <Button variant="ghost" className="rounded-xl border-2 border-dashed border-primary/30 hover:border-primary/60 hover:bg-primary/5 transition-all flex flex-col items-center justify-center min-h-[250px] group h-auto">
               <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center text-primary mb-3 group-hover:scale-110 transition-transform">
                 <PlusCircle size={24} />
               </div>
               <p className="text-sm font-bold text-primary uppercase tracking-widest">Tavolinë e Re</p>
-            </button>
+            </Button>
           </div>
         </div>
       </section>
@@ -259,52 +264,54 @@ export const SeatingPlanScreen: React.FC<SeatingPlanScreenProps> = ({ groups, ta
                   <PlusCircle className="text-primary" size={22} />
                   Shto Tavolinë
                 </h3>
-                <button
+                <Button
                   type="button"
                   onClick={() => setIsAddTableOpen(false)}
-                  className="p-2 hover:bg-slate-100 rounded-full transition-colors"
+                  variant="ghost"
+                  size="icon"
                 >
                   <X size={20} />
-                </button>
+                </Button>
               </div>
               <form onSubmit={handleAddTableSubmit} className="p-6 space-y-5">
                 <div className="space-y-2">
                   <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Emri i tavolinës</label>
-                  <input
+                  <Input
                     type="text"
                     value={newTableName}
                     onChange={(e) => setNewTableName(e.target.value)}
-                    className="w-full h-12 px-4 rounded-xl bg-slate-50 border border-slate-200 focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all font-medium"
+                    className="h-12 bg-slate-50 border-slate-200 font-medium"
                     placeholder="e.g. Tavolina 1"
                     required
                   />
                 </div>
                 <div className="space-y-2">
                   <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Numri i vendeve</label>
-                  <input
+                  <Input
                     type="number"
                     min={1}
                     max={999}
                     value={newTableCapacity}
                     onChange={(e) => setNewTableCapacity(Number(e.target.value) || 1)}
-                    className="w-full h-12 px-4 rounded-xl bg-slate-50 border border-slate-200 focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all font-medium"
+                    className="h-12 bg-slate-50 border-slate-200 font-medium"
                   />
                 </div>
                 <div className="flex gap-3 pt-2">
-                  <button
+                  <Button
                     type="button"
                     onClick={() => setIsAddTableOpen(false)}
-                    className="flex-1 h-12 rounded-xl font-bold text-slate-500 hover:bg-slate-50 transition-all"
+                    variant="ghost"
+                    className="flex-1 h-12 font-bold text-slate-500 hover:bg-slate-50"
                   >
                     Anulo
-                  </button>
-                  <button
+                  </Button>
+                  <Button
                     type="submit"
                     disabled={isSubmitting}
-                    className="flex-[2] h-12 bg-primary text-white font-bold rounded-xl shadow-lg shadow-primary/20 hover:opacity-90 disabled:opacity-50 transition-all"
+                    className="flex-[2] h-12 font-bold shadow-lg shadow-primary/20 hover:opacity-90 disabled:opacity-50 transition-all"
                   >
                     {isSubmitting ? 'Duke shtuar...' : 'Shto Tavolinën'}
-                  </button>
+                  </Button>
                 </div>
               </form>
             </motion.div>

@@ -1,6 +1,19 @@
 import React, { useState } from 'react';
-import { LogIn, Mail, Lock, ArrowRight } from 'lucide-react';
+import { Mail, Lock, ArrowRight } from 'lucide-react';
 import { motion } from 'motion/react';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Button } from '@/components/ui/button';
+import {
+  Card,
+  CardAction,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 
 interface LoginScreenProps {
   onLogin: () => void;
@@ -27,75 +40,79 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ onLogin }) => {
         animate={{ opacity: 1, y: 0 }}
         className="w-full max-w-md"
       >
-        <div className="text-center mb-10">
-          <div className="inline-flex items-center justify-center size-16 rounded-2xl bg-primary text-white mb-6 shadow-xl shadow-primary/20">
-            <LogIn size={32} />
-          </div>
-          <h1 className="text-4xl font-black tracking-tight text-slate-900">GuestSeat</h1>
-          <p className="text-slate-500 mt-2 font-medium">Hyni për të menaxhuar ngjarjen tuaj</p>
-        </div>
-
-        <div className="bg-white p-8 rounded-3xl shadow-xl border border-primary/5">
-          <form onSubmit={handleSubmit} className="space-y-6">
-            <div className="space-y-2">
-              <label className="text-xs font-bold text-slate-400 uppercase tracking-widest ml-1">Adresa Email</label>
-              <div className="relative">
-                <Mail className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={20} />
-                <input 
-                  type="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  className="w-full h-14 pl-12 pr-4 rounded-2xl bg-slate-50 border-none focus:ring-2 focus:ring-primary/50 transition-all text-slate-900 font-medium"
-                  placeholder="admin@guestseat.com"
-                  required
-                />
+        <Card className="w-full max-w-md">
+          <CardHeader>
+            <CardTitle className="text-2xl">Login to your account</CardTitle>
+            <CardDescription>
+              Enter your email below to login to your account
+            </CardDescription>
+            <CardAction>
+              <Button variant="link" className="px-0">Sign Up</Button>
+            </CardAction>
+          </CardHeader>
+          <CardContent>
+            <form id="login-form" onSubmit={handleSubmit}>
+              <div className="flex flex-col gap-6">
+                <div className="grid gap-2">
+                  <Label htmlFor="email">Email</Label>
+                  <div className="relative">
+                    <Mail className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" size={16} />
+                    <Input
+                      id="email"
+                      type="email"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      className="pl-9"
+                      placeholder="admin@guestseat.com"
+                      required
+                    />
+                  </div>
+                </div>
+                <div className="grid gap-2">
+                  <div className="flex items-center">
+                    <Label htmlFor="password">Password</Label>
+                    <a
+                      href="#"
+                      className="ml-auto inline-block text-sm underline-offset-4 hover:underline"
+                    >
+                      Forgot your password?
+                    </a>
+                  </div>
+                  <div className="relative">
+                    <Lock className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" size={16} />
+                    <Input
+                      id="password"
+                      type="password"
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      className="pl-9"
+                      required
+                    />
+                  </div>
+                </div>
+                {error && (
+                  <Alert variant="destructive" className="border-red-100 bg-red-50">
+                    <AlertDescription className="text-sm">{error}</AlertDescription>
+                  </Alert>
+                )}
               </div>
+            </form>
+          </CardContent>
+          <CardFooter className="flex-col gap-2">
+            <Button type="submit" form="login-form" className="w-full group">
+              <span>Login</span>
+              <ArrowRight size={16} className="group-hover:translate-x-1 transition-transform" />
+            </Button>
+            <Button variant="outline" className="w-full">
+              Login with Google
+            </Button>
+            <div className="mt-2 w-full rounded-lg border bg-muted/40 p-3 text-sm">
+              <p className="mb-1 font-medium">Demo credentials</p>
+              <p className="text-muted-foreground">Email: admin@guestseat.com</p>
+              <p className="text-muted-foreground">Password: password123</p>
             </div>
-
-            <div className="space-y-2">
-              <label className="text-xs font-bold text-slate-400 uppercase tracking-widest ml-1">Fjalëkalimi</label>
-              <div className="relative">
-                <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={20} />
-                <input 
-                  type="password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  className="w-full h-14 pl-12 pr-4 rounded-2xl bg-slate-50 border-none focus:ring-2 focus:ring-primary/50 transition-all text-slate-900 font-medium"
-                  placeholder="••••••••"
-                  required
-                />
-              </div>
-            </div>
-
-            {error && (
-              <p className="text-red-500 text-sm font-bold text-center bg-red-50 p-3 rounded-xl border border-red-100">
-                {error}
-              </p>
-            )}
-
-            <button 
-              type="submit"
-              className="w-full h-14 bg-primary text-white font-bold rounded-2xl shadow-lg shadow-primary/20 hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center justify-center gap-2 group"
-            >
-              <span>Hyni</span>
-              <ArrowRight size={20} className="group-hover:translate-x-1 transition-transform" />
-            </button>
-          </form>
-
-          <div className="mt-8 pt-8 border-t border-slate-100">
-            <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-4 text-center">Kredencialet Demo</p>
-            <div className="bg-slate-50 p-4 rounded-2xl space-y-2">
-              <div className="flex justify-between text-sm">
-                <span className="text-slate-500">Email:</span>
-                <span className="font-bold text-slate-900">admin@guestseat.com</span>
-              </div>
-              <div className="flex justify-between text-sm">
-                <span className="text-slate-500">Fjalëkalimi:</span>
-                <span className="font-bold text-slate-900">password123</span>
-              </div>
-            </div>
-          </div>
-        </div>
+          </CardFooter>
+        </Card>
       </motion.div>
     </div>
   );
