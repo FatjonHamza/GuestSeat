@@ -18,6 +18,7 @@ const GuestPatchSchema = z.object({
   attendees: z.array(z.string()).optional(),
   note: z.string().nullable().optional(),
   tableId: z.string().nullable().optional(),
+  arrivedAt: z.string().nullable().optional(),
 });
 
 router.post(
@@ -90,10 +91,12 @@ router.patch(
     const note = parsed.note !== undefined ? parsed.note : existing.note;
     const tableId =
       parsed.tableId !== undefined ? parsed.tableId : existing.table_id;
+    const arrivedAt =
+      parsed.arrivedAt !== undefined ? parsed.arrivedAt : existing.arrived_at;
 
     db.prepare(
-      "UPDATE guest_groups SET attendees = ?, group_size = ?, note = ?, table_id = ? WHERE id = ?",
-    ).run(attendees, groupSize, note ?? null, tableId ?? null, id);
+      "UPDATE guest_groups SET attendees = ?, group_size = ?, note = ?, table_id = ?, arrived_at = ? WHERE id = ?",
+    ).run(attendees, groupSize, note ?? null, tableId ?? null, arrivedAt ?? null, id);
 
     res.json({ success: true });
   }),

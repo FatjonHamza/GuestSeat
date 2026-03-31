@@ -13,13 +13,8 @@ export default defineConfig(({mode}) => {
       },
     },
     server: {
-      // Helpful when running frontend and API as separate dev processes.
-      proxy: {
-        '/api': {
-          target: 'http://localhost:3000',
-          changeOrigin: true,
-        },
-      },
+      // API and frontend are served by the same Express process in dev (`server.ts`),
+      // so proxying `/api` here can cause connection issues.
       // HMR is disabled in AI Studio via DISABLE_HMR env var.
       // Do not modify-file watching is disabled to prevent flickering during agent edits.
       hmr: process.env.DISABLE_HMR !== 'true',

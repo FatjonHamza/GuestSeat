@@ -4,24 +4,19 @@ import {
   Users, 
   Table as TableIcon, 
   Mail, 
-  Search, 
-  Bell, 
-  Settings, 
   Wand2, 
   UserCheck
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
-import { EventDetails, Invitation, GuestGroup, Table, Screen } from './types';
+import { EventDetails, Invitation, GuestGroup, Table, Screen, ClientAccount, ClientAnalytics } from './types';
 import { api } from './services/api';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
+import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Card, CardContent } from '@/components/ui/card';
 import {
   SidebarProvider,
   Sidebar as AppSidebarContainer,
   SidebarContent,
-  SidebarFooter,
   SidebarGroup,
   SidebarInset,
   SidebarMenu,
@@ -39,9 +34,14 @@ import { RSVPScreen } from './components/screens/RSVPScreen';
 import { CheckInScreen } from './components/screens/CheckInScreen';
 import { LoginScreen } from './components/screens/LoginScreen';
 import { InvitationTemplateScreen } from './components/screens/InvitationTemplateScreen';
+import { SuperAdminScreen } from './components/screens/SuperAdminScreen';
+import { AdminLoginScreen } from './components/screens/AdminLoginScreen';
 import { AppErrorBoundary } from './components/AppErrorBoundary';
 
 const AUTH_STORAGE_KEY = 'guestseat:isLoggedIn';
+const ACCOUNT_NAME_STORAGE_KEY = 'guestseat:accountName';
+const ADMIN_AUTH_STORAGE_KEY = 'guestseat:admin:isLoggedIn';
+const DEFAULT_ACCOUNT_NAME = 'Admin GuestSeat';
 
 // --- Components ---
 
@@ -75,22 +75,23 @@ const AppSidebar = ({ currentScreen, setScreen }: { currentScreen: Screen, setSc
           </SidebarMenu>
         </SidebarGroup>
       </SidebarContent>
-      <SidebarFooter className="p-4">
-        <Card className="bg-primary/5 border-primary/20">
-          <CardContent className="p-4">
-          <p className="text-[10px] font-bold text-primary uppercase tracking-wider mb-2">Plani i Pritësit</p>
-          <p className="text-sm font-medium">Akses Premium në Ngjarje</p>
-          <Button className="mt-3 w-full text-xs font-bold uppercase">
-            Përmirëso
-          </Button>
-          </CardContent>
-        </Card>
-      </SidebarFooter>
     </AppSidebarContainer>
   );
 };
 
-const Header = ({ eventName, onLogout }: { eventName?: string, onLogout: () => void }) => (
+const getAccountInitials = (accountName?: string) => {
+  const trimmed = accountName?.trim();
+  if (!trimmed) return 'GS';
+
+  const parts = trimmed.split(/\s+/).filter(Boolean);
+  if (parts.length >= 2) {
+    return `${parts[0][0]}${parts[1][0]}`.toUpperCase();
+  }
+
+  return parts[0].slice(0, 2).toUpperCase();
+};
+
+const Header = ({ eventName, accountName, onLogout }: { eventName?: string, accountName?: string, onLogout: () => void }) => (
   <header className="flex items-center justify-between border-b border-primary/10 bg-white px-6 py-4 lg:px-10 shrink-0">
     <div className="flex items-center gap-3">
       <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary text-white">
@@ -102,30 +103,14 @@ const Header = ({ eventName, onLogout }: { eventName?: string, onLogout: () => v
       </div>
     </div>
     <div className="flex items-center gap-4">
-      <div className="relative hidden sm:block">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
-        <Input
-          type="text" 
-          placeholder="Kërko të ftuar..." 
-          className="h-10 w-64 bg-slate-100 pl-10 text-sm"
-        />
-      </div>
-      <Button variant="ghost" size="icon" className="h-10 w-10 bg-primary/10 text-primary hover:bg-primary/20">
-        <Bell size={20} />
-      </Button>
-      <Button variant="ghost" size="icon" className="h-10 w-10 bg-primary/10 text-primary hover:bg-primary/20">
-        <Settings size={20} />
-      </Button>
       <Button 
         onClick={onLogout}
         variant="destructive"
-        className="h-10 px-3 text-xs font-bold uppercase tracking-wider"
       >
         Çkyçu
       </Button>
-      <Avatar className="h-10 w-10 border-2 border-primary">
-        <AvatarImage src="https://picsum.photos/seed/host/100/100" alt="Host avatar" />
-        <AvatarFallback>GS</AvatarFallback>
+      <Avatar className="h-10 w-10">
+        <AvatarFallback>{getAccountInitials(accountName)}</AvatarFallback>
       </Avatar>
     </div>
   </header>
@@ -134,6 +119,7 @@ const Header = ({ eventName, onLogout }: { eventName?: string, onLogout: () => v
 // --- Main App ---
 
 export default function App() {
+  const isAdminRoute = typeof window !== 'undefined' && window.location.pathname.startsWith('/admin');
   const [screen, setScreen] = useState<Screen>('Login');
   const [isLoggedIn, setIsLoggedIn] = useState<boolean>(() => {
     try {
@@ -148,8 +134,46 @@ export default function App() {
   const [invitations, setInvitations] = useState<Invitation[]>([]);
   const [loading, setLoading] = useState(true);
   const [rsvpToken, setRsvpToken] = useState<string | null>(null);
+  const [clients, setClients] = useState<ClientAccount[]>([]);
+  const [clientAnalytics, setClientAnalytics] = useState<ClientAnalytics>({
+    total: 0,
+    active: 0,
+    expired: 0,
+    upcoming: 0,
+    expiringSoon: 0,
+  });
+  const [accountName, setAccountName] = useState<string>(() => {
+    try {
+      return localStorage.getItem(ACCOUNT_NAME_STORAGE_KEY) || '';
+    } catch {
+      return '';
+    }
+  });
+  const [isAdminLoggedIn, setIsAdminLoggedIn] = useState<boolean>(() => {
+    try {
+      return localStorage.getItem(ADMIN_AUTH_STORAGE_KEY) === 'true';
+    } catch {
+      return false;
+    }
+  });
 
   useEffect(() => {
+    // Backfill account name for sessions created before initials support.
+    if (!isLoggedIn || accountName) return;
+    try {
+      localStorage.setItem(ACCOUNT_NAME_STORAGE_KEY, DEFAULT_ACCOUNT_NAME);
+    } catch {
+      // Ignore storage errors and still update local state.
+    }
+    setAccountName(DEFAULT_ACCOUNT_NAME);
+  }, [isLoggedIn, accountName]);
+
+  useEffect(() => {
+    if (isAdminRoute) {
+      setLoading(false);
+      return;
+    }
+
     // Basic routing for RSVP
     const path = window.location.pathname;
     if (path.startsWith('/rsvp/')) {
@@ -181,7 +205,7 @@ export default function App() {
       }
     };
     loadEvent();
-  }, [isLoggedIn]);
+  }, [isLoggedIn, isAdminRoute]);
 
   const refreshData = async (eventId: string) => {
     const [g, t, i] = await Promise.all([
@@ -193,6 +217,17 @@ export default function App() {
     setTables(t);
     setInvitations(i);
   };
+
+  const refreshClients = async () => {
+    const [list, analytics] = await Promise.all([api.getClients(), api.getClientAnalytics()]);
+    setClients(list);
+    setClientAnalytics(analytics);
+  };
+
+  useEffect(() => {
+    if (!isAdminRoute || !isAdminLoggedIn) return;
+    void refreshClients();
+  }, [isAdminRoute, isAdminLoggedIn]);
 
   const handleCreateEvent = async (details: Partial<EventDetails>) => {
     try {
@@ -271,6 +306,7 @@ export default function App() {
       setEventDetails(updated);
     } catch (err) {
       console.error('Failed to update event:', err);
+      throw (err instanceof Error ? err : new Error('Failed to update event'));
     }
   };
 
@@ -287,7 +323,7 @@ export default function App() {
     }
   };
 
-  const handleUpdateGuest = async (id: string, data: Partial<Pick<GuestGroup, 'attendees' | 'note' | 'tableId'>>) => {
+  const handleUpdateGuest = async (id: string, data: Partial<Pick<GuestGroup, 'attendees' | 'note' | 'tableId' | 'arrivedAt'>>) => {
     if (!eventDetails) return;
     try {
       await api.updateGuest(id, data);
@@ -308,6 +344,22 @@ export default function App() {
     }
   };
 
+  const handleCreateClient = async (payload: Omit<ClientAccount, 'id' | 'createdAt'>) => {
+    const result = await api.createClient(payload);
+    await refreshClients();
+    return result;
+  };
+
+  const handleUpdateClient = async (id: string, payload: Partial<Omit<ClientAccount, 'id' | 'createdAt'>>) => {
+    await api.updateClient(id, payload);
+    await refreshClients();
+  };
+
+  const handleDeleteClient = async (id: string) => {
+    await api.deleteClient(id);
+    await refreshClients();
+  };
+
   if (loading) return (
     <div className="min-h-screen flex items-center justify-center bg-background-light">
       <div className="h-12 w-12 animate-spin rounded-full border-b-2 border-t-2 border-primary" />
@@ -318,11 +370,58 @@ export default function App() {
     return <RSVPScreen token={rsvpToken} />;
   }
 
+  if (isAdminRoute) {
+    if (!isAdminLoggedIn) {
+      return (
+        <AdminLoginScreen
+          onLogin={() => {
+            localStorage.setItem(ADMIN_AUTH_STORAGE_KEY, 'true');
+            setIsAdminLoggedIn(true);
+          }}
+        />
+      );
+    }
+
+    return (
+      <div className="min-h-screen bg-background-light">
+        <header className="flex items-center justify-between border-b border-primary/10 bg-white px-6 py-4 lg:px-10">
+          <div>
+            <h1 className="text-xl font-bold tracking-tight">GuestSeat SuperAdmin</h1>
+            <p className="text-sm text-muted-foreground">Menaxhimi i klientëve dhe aksesit</p>
+          </div>
+          <Button
+            variant="destructive"
+            onClick={() => {
+              localStorage.removeItem(ADMIN_AUTH_STORAGE_KEY);
+              setIsAdminLoggedIn(false);
+            }}
+          >
+            Çkyçu
+          </Button>
+        </header>
+        <main className="p-10">
+          <SuperAdminScreen
+            clients={clients}
+            analytics={clientAnalytics}
+            onCreateClient={handleCreateClient}
+            onUpdateClient={handleUpdateClient}
+            onDeleteClient={handleDeleteClient}
+          />
+        </main>
+      </div>
+    );
+  }
+
   if (!isLoggedIn) {
     return (
       <LoginScreen
-        onLogin={() => {
+        onLogin={async ({ email, password, accountName: fallbackAccountName }) => {
+          const client = await api.loginClient({ email, password });
+          const nextAccountName =
+            `${client.firstName ?? ''} ${client.lastName ?? ''}`.trim() || fallbackAccountName;
+          localStorage.setItem(ACCOUNT_NAME_STORAGE_KEY, nextAccountName);
           localStorage.setItem(AUTH_STORAGE_KEY, 'true');
+          setAccountName(nextAccountName);
           setIsLoggedIn(true);
         }}
       />
@@ -341,18 +440,20 @@ export default function App() {
   };
 
   const handleLogout = () => {
+    localStorage.removeItem(ACCOUNT_NAME_STORAGE_KEY);
     localStorage.removeItem(AUTH_STORAGE_KEY);
+    setAccountName('');
     setIsLoggedIn(false);
     setScreen('Login');
   };
 
   return (
     <div className="flex flex-col h-screen overflow-hidden bg-background-light">
-      <Header eventName={eventDetails?.name} onLogout={handleLogout} />
+      <Header eventName={eventDetails?.name} accountName={accountName} onLogout={handleLogout} />
       <SidebarProvider className="flex flex-1 overflow-hidden min-h-0">
         <AppSidebar currentScreen={screen} setScreen={setScreen} />
         <SidebarInset className="overflow-y-auto p-10 custom-scrollbar">
-          <AppErrorBoundary>
+          <AppErrorBoundary key={screen}>
             <AnimatePresence mode="wait">
               <motion.div
                 key={screen}
@@ -399,7 +500,13 @@ export default function App() {
                   />
                 )}
                 {screen === 'CheckIn' && (
-                  <CheckInScreen groups={groups} tables={tables} />
+                  <CheckInScreen
+                    groups={groups}
+                    tables={tables}
+                    onMarkArrived={async (groupId) => {
+                      await handleUpdateGuest(groupId, { arrivedAt: new Date().toISOString() });
+                    }}
+                  />
                 )}
                 {screen === 'InvitationTemplate' && eventDetails && (
                   <InvitationTemplateScreen 

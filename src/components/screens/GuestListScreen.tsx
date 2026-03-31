@@ -47,6 +47,7 @@ type DisplayItem = {
   size: number;
   tableId: string | null;
   status: RSVPStatus;
+  arrivedAt?: string;
   note?: string;
 };
 
@@ -96,6 +97,7 @@ export const GuestListScreen: React.FC<GuestListScreenProps> = ({ groups, tables
         size: group.groupSize,
         tableId: group.tableId ?? null,
         status: 'Responded' as RSVPStatus,
+        arrivedAt: group.arrivedAt,
         note: group.note
       });
     });
@@ -111,6 +113,7 @@ export const GuestListScreen: React.FC<GuestListScreenProps> = ({ groups, tables
           size: invitation.allowedGuests,
           tableId: null,
           status: invitation.status,
+          arrivedAt: undefined,
           note: ''
         });
       }
@@ -296,9 +299,20 @@ export const GuestListScreen: React.FC<GuestListScreenProps> = ({ groups, tables
       },
       {
         accessorKey: 'status',
-        header: 'Statusi i RSVP',
+        header: 'Statusi',
         cell: ({ row }) => {
           const item = row.original;
+          if (item.arrivedAt) {
+            return (
+              <span className="flex items-center gap-1.5 text-sm font-medium text-emerald-700">
+                <span className="size-2 rounded-full bg-emerald-600"></span>
+                <span className="flex items-center gap-1">
+                  <CheckCircle2 size={14} />
+                  Ka arritur
+                </span>
+              </span>
+            );
+          }
           return (
             <span className={`flex items-center gap-1.5 text-sm font-medium ${getStatusColor(item.status).split(' ')[0]}`}>
               <span className={`size-2 rounded-full ${getStatusColor(item.status).split(' ')[1]}`}></span>
@@ -342,13 +356,13 @@ export const GuestListScreen: React.FC<GuestListScreenProps> = ({ groups, tables
     <div className="space-y-8">
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
         <div className="flex flex-col gap-2">
-          <h1 className="text-4xl font-black tracking-tight">Menaxhimi i të Ftuarve</h1>
-          <p className="text-slate-500 text-sm">Menaxhoni RSVP-të, caktimet e ulëseve dhe grupet e të ftuarve.</p>
+          <h1 className="text-3xl font-semibold tracking-tight">Menaxhimi i të Ftuarve</h1>
+          <p className="text-sm text-muted-foreground">Menaxhoni përgjigjet, caktimet e ulëseve dhe grupet e të ftuarve.</p>
         </div>
         <Button
           onClick={() => setIsModalOpen(true)}
           variant="outline"
-          className="h-12 px-6 text-sm font-bold"
+          size="lg"
         >
           <UserPlus size={20} />
           <span>Shto të Ftuar</span>
@@ -493,7 +507,6 @@ export const GuestListScreen: React.FC<GuestListScreenProps> = ({ groups, tables
                       type="button"
                       onClick={handleAddAttendee}
                       variant="link"
-                      className="text-primary font-bold text-sm py-2"
                     >
                       <Plus size={16} />
                       Shto një pjesëmarrës tjetër
@@ -531,14 +544,16 @@ export const GuestListScreen: React.FC<GuestListScreenProps> = ({ groups, tables
                     type="button"
                     onClick={() => setIsModalOpen(false)}
                     variant="ghost"
-                    className="flex-1 h-12 font-bold text-slate-500 hover:bg-slate-50"
+                    size="lg"
+                    className="flex-1"
                   >
                     Anulo
                   </Button>
                   <Button
                     type="submit"
                     disabled={isSubmitting}
-                    className="flex-[2] h-12 font-bold shadow-lg shadow-primary/20 hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50 transition-all"
+                    size="lg"
+                    className="flex-[2]"
                   >
                     {isSubmitting ? 'Duke shtuar...' : 'Shto Grupin e të Ftuarve'}
                   </Button>
@@ -573,7 +588,7 @@ export const GuestListScreen: React.FC<GuestListScreenProps> = ({ groups, tables
               {selectedGuest.type === 'invitation' ? (
                 <div className="p-6 space-y-4">
                   <div>
-                    <p className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">Statusi i RSVP</p>
+                    <p className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">Statusi i ftesës</p>
                     <span className={`inline-flex items-center gap-1.5 text-sm font-medium ${getStatusColor(selectedGuest.status).split(' ')[0]}`}>
                       <span className={`size-2 rounded-full ${getStatusColor(selectedGuest.status).split(' ')[1]}`} />
                       {selectedGuest.status === 'Responded' ? 'Përgjigjur' : selectedGuest.status === 'Sent' ? 'Dërguar' : 'Draft'}
@@ -589,7 +604,7 @@ export const GuestListScreen: React.FC<GuestListScreenProps> = ({ groups, tables
                   </div>
                   <p className="text-sm text-slate-500 italic">Kjo ftesë nuk ka përgjigjur ende. Nuk mund të redaktoni grupin këtu.</p>
                   <div className="pt-4">
-                    <Button type="button" onClick={() => setSelectedGuest(null)} variant="secondary" className="w-full h-12 font-bold text-slate-600">
+                    <Button type="button" onClick={() => setSelectedGuest(null)} variant="secondary" className="w-full">
                       Mbyll
                     </Button>
                   </div>
@@ -597,11 +612,18 @@ export const GuestListScreen: React.FC<GuestListScreenProps> = ({ groups, tables
               ) : (
                 <form onSubmit={handleDetailSave} className="p-6 space-y-5">
                   <div>
-                    <p className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Statusi i RSVP</p>
-                    <span className="inline-flex items-center gap-1.5 text-sm font-medium text-emerald-600">
-                      <CheckCircle2 size={16} />
-                      Përgjigjur
-                    </span>
+                    <p className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Statusi i ftesës</p>
+                    {selectedGuest.arrivedAt ? (
+                      <span className="inline-flex items-center gap-1.5 text-sm font-medium text-emerald-700">
+                        <CheckCircle2 size={16} />
+                        Ka arritur
+                      </span>
+                    ) : (
+                      <span className="inline-flex items-center gap-1.5 text-sm font-medium text-emerald-600">
+                        <CheckCircle2 size={16} />
+                        Përgjigjur
+                      </span>
+                    )}
                   </div>
                   <div className="space-y-2">
                     <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Pjesëmarrësit</label>
@@ -621,7 +643,7 @@ export const GuestListScreen: React.FC<GuestListScreenProps> = ({ groups, tables
                           )}
                         </div>
                       ))}
-                      <Button type="button" onClick={handleDetailAddAttendee} variant="link" className="text-primary font-bold text-sm py-1">
+                      <Button type="button" onClick={handleDetailAddAttendee} variant="link">
                         <Plus size={16} />
                         Shto pjesëmarrës
                       </Button>
@@ -658,7 +680,8 @@ export const GuestListScreen: React.FC<GuestListScreenProps> = ({ groups, tables
                       onClick={handleDetailDelete}
                       disabled={isDetailDeleting}
                       variant="destructive"
-                      className="flex-1 h-12 font-bold text-red-600 bg-red-50 hover:bg-red-100 disabled:opacity-50 transition-all"
+                      size="lg"
+                      className="flex-1"
                     >
                       <Trash2 size={18} />
                       {isDetailDeleting ? 'Duke fshirë...' : 'Fshi'}
@@ -666,7 +689,8 @@ export const GuestListScreen: React.FC<GuestListScreenProps> = ({ groups, tables
                     <Button
                       type="submit"
                       disabled={isDetailSaving}
-                      className="flex-[2] h-12 font-bold shadow-lg shadow-primary/20 hover:opacity-90 disabled:opacity-50 transition-all"
+                      size="lg"
+                      className="flex-[2]"
                     >
                       {isDetailSaving ? 'Duke ruajtur...' : 'Ruaj ndryshimet'}
                     </Button>

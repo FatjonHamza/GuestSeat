@@ -14,7 +14,7 @@ import {
 import { Screen, Invitation, GuestGroup, Table } from '../../types';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { SectionCards } from '@/components/section-cards';
 import {
   Table as DataTable,
@@ -59,11 +59,11 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({ onNavigate, st
     })),
     ...invitations.filter(i => i.status === 'Responded' && i.respondedAt).map(i => ({
       id: `rsvp-${i.id}`,
-      type: 'RSVP',
+      type: 'Përgjigje',
       text: `${i.inviteeName} u përgjigj ftesës.`,
       time: new Date(i.respondedAt!).getTime(),
       timeLabel: new Date(i.respondedAt!).toLocaleString(),
-      status: 'RSVP',
+      status: 'Përgjigje',
       color: 'bg-green-100 text-green-700',
       icon: CheckCircle2
     })),
@@ -89,7 +89,7 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({ onNavigate, st
         const activity = row.original;
         return (
           <div className="flex items-center gap-3">
-            <div className="h-8 w-8 rounded-full bg-primary/20 flex items-center justify-center text-primary">
+            <div className="h-8 w-8 rounded-full bg-slate-100 flex items-center justify-center text-slate-900">
               <activity.icon size={16} />
             </div>
             <span className="font-medium text-sm">{activity.text}</span>
@@ -130,7 +130,7 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({ onNavigate, st
         </div>
         <Button 
           onClick={() => onNavigate('Invitations')}
-          className="h-auto px-5 py-2.5 font-bold shadow-lg shadow-primary/20 transition-all hover:scale-105 active:scale-95"
+          size="lg"
         >
           <Send size={18} />
           Dërgo Ftesë
@@ -160,7 +160,7 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({ onNavigate, st
                 key={i} 
                 onClick={() => onNavigate(action.screen)}
                 variant="outline"
-                className="h-auto w-full justify-between p-4 hover:border-primary group transition-all"
+                className="w-full justify-between group h-auto px-4 py-3"
               >
                 <div className="flex items-center gap-3">
                   <div className="bg-primary/10 p-2 rounded-lg text-primary">
@@ -175,13 +175,14 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({ onNavigate, st
         </div>
 
         <div className="lg:col-span-2 space-y-6">
-          <div className="flex items-center justify-between">
-            <h2 className="text-xl font-bold flex items-center gap-2">
-              <History className="text-primary" size={20} />
-              Aktiviteti i Fundit
-            </h2>
-          </div>
-          <Card className="overflow-hidden min-h-[300px]">
+          <Card className="min-h-[300px]">
+            <CardHeader className="pb-3">
+              <CardTitle className="flex items-center gap-2 text-xl">
+                <History className="text-primary" size={20} />
+                Aktiviteti i Fundit
+              </CardTitle>
+              <CardDescription>Ndryshimet më të fundit në ftesa, përgjigje dhe tavolina.</CardDescription>
+            </CardHeader>
             <CardContent className="p-0">
               {activities.length > 0 ? (
                 <>
@@ -190,7 +191,7 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({ onNavigate, st
                       {activityTable.getHeaderGroups().map((headerGroup) => (
                         <TableRow key={headerGroup.id}>
                           {headerGroup.headers.map((header) => (
-                            <TableHead key={header.id}>
+                            <TableHead key={header.id} className="px-6">
                               {header.isPlaceholder
                                 ? null
                                 : flexRender(
@@ -206,7 +207,7 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({ onNavigate, st
                       {activityTable.getRowModel().rows.map((row) => (
                         <TableRow key={row.id}>
                           {row.getVisibleCells().map((cell) => (
-                            <TableCell key={cell.id}>
+                            <TableCell key={cell.id} className="px-6">
                               {flexRender(cell.column.columnDef.cell, cell.getContext())}
                             </TableCell>
                           ))}
@@ -216,9 +217,9 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({ onNavigate, st
                   </DataTable>
                 </>
               ) : (
-                <div className="flex flex-col items-center justify-center h-full min-h-[300px] text-center p-10">
-                  <History size={40} className="mx-auto text-slate-200 mb-3" />
-                  <p className="text-slate-400 font-medium">Nuk ka aktivitet të fundit për të treguar.</p>
+                <div className="flex flex-col items-center justify-center h-full min-h-[240px] text-center p-10">
+                  <History size={36} className="mx-auto text-muted-foreground/40 mb-3" />
+                  <p className="text-muted-foreground">Nuk ka aktivitet të fundit për të treguar.</p>
                 </div>
               )}
             </CardContent>

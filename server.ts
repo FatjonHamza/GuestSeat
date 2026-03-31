@@ -1,3 +1,4 @@
+import "dotenv/config";
 import express from "express";
 import { createServer as createViteServer } from "vite";
 import path from "path";
@@ -7,6 +8,7 @@ import eventsRouter from "./routes/events";
 import invitationsRouter from "./routes/invitations";
 import guestsRouter from "./routes/guests";
 import tablesRouter from "./routes/tables";
+import clientsRouter from "./routes/clients";
 import { runMigrations } from "./db";
 
 const __filename = fileURLToPath(import.meta.url);
@@ -24,6 +26,7 @@ async function startServer() {
   app.use("/api", invitationsRouter);
   app.use("/api", guestsRouter);
   app.use("/api", tablesRouter);
+  app.use("/api", clientsRouter);
 
   app.use((err: unknown, req: express.Request, res: express.Response, next: express.NextFunction) => {
     if (res.headersSent) {

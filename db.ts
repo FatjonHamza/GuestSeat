@@ -37,6 +37,7 @@ const migrations: string[] = [
       name TEXT NOT NULL,
       date TEXT NOT NULL,
       time TEXT,
+      invitation_heading TEXT,
       venue_name TEXT NOT NULL,
       venue_address TEXT,
       venue_map_url TEXT,
@@ -69,6 +70,7 @@ const migrations: string[] = [
       group_size INTEGER NOT NULL,
       note TEXT,
       table_id TEXT,
+      arrived_at TEXT,
       created_at TEXT DEFAULT CURRENT_TIMESTAMP,
       FOREIGN KEY (event_id) REFERENCES events(id),
       FOREIGN KEY (invitation_id) REFERENCES invitations(id)
@@ -98,6 +100,29 @@ const migrations: string[] = [
   `,
   `
     ALTER TABLE events ADD COLUMN venue_map_url TEXT;
+  `,
+  `
+    ALTER TABLE events ADD COLUMN invitation_headline TEXT;
+  `,
+  `
+    ALTER TABLE guest_groups ADD COLUMN arrived_at TEXT;
+  `,
+  `
+    CREATE TABLE IF NOT EXISTS clients (
+      id TEXT PRIMARY KEY,
+      first_name TEXT NOT NULL,
+      last_name TEXT NOT NULL,
+      phone TEXT NOT NULL,
+      email TEXT NOT NULL UNIQUE,
+      password TEXT,
+      access_start TEXT NOT NULL,
+      access_end TEXT NOT NULL,
+      is_active INTEGER NOT NULL DEFAULT 1,
+      created_at TEXT DEFAULT CURRENT_TIMESTAMP
+    );
+  `,
+  `
+    ALTER TABLE clients ADD COLUMN password TEXT;
   `,
 ];
 

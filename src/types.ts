@@ -5,6 +5,7 @@ export interface EventDetails {
   name: string;
   date: string;
   time?: string;
+  invitationHeading?: string;
   venueName: string;
   venueAddress?: string;
   venueMapUrl?: string;
@@ -34,6 +35,7 @@ export interface GuestGroup {
   groupSize: number;
   note?: string;
   tableId?: string;
+  arrivedAt?: string;
   createdAt?: string;
 }
 
@@ -43,6 +45,26 @@ export interface Table {
   name: string;
   capacity: number;
   createdAt?: string;
+}
+
+export interface ClientAccount {
+  id: string;
+  firstName: string;
+  lastName: string;
+  phone: string;
+  email: string;
+  accessStart: string;
+  accessEnd: string;
+  isActive: boolean;
+  createdAt?: string;
+}
+
+export interface ClientAnalytics {
+  total: number;
+  active: number;
+  expired: number;
+  upcoming: number;
+  expiringSoon: number;
 }
 
 export type Screen = 'Login' | 'Dashboard' | 'GuestList' | 'SeatingPlan' | 'CreateEvent' | 'Invitations' | 'RSVP' | 'CheckIn' | 'InvitationTemplate';

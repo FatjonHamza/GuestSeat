@@ -1,8 +1,15 @@
-import { EventDetails, Invitation, GuestGroup, Table } from '../types';
+import { EventDetails, Invitation, GuestGroup, Table, ClientAccount, ClientAnalytics } from '../types';
 
 const API_BASE = typeof import.meta.env.VITE_API_BASE === 'string' && import.meta.env.VITE_API_BASE
   ? import.meta.env.VITE_API_BASE.replace(/\/$/, '')
   : '/api';
+const REQUEST_TIMEOUT_MS = 10000;
+
+function createTimeoutSignal(timeoutMs = REQUEST_TIMEOUT_MS): AbortSignal {
+  const controller = new AbortController();
+  setTimeout(() => controller.abort(), timeoutMs);
+  return controller.signal;
+}
 
 async function parseJson(res: Response) {
   const text = await res.text();
@@ -39,7 +46,9 @@ export const api = {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(details),
     });
-    return res.json();
+    const data = await parseJson(res);
+    if (!res.ok) throw new Error((data as { error?: string }).error || `Failed (${res.status})`);
+    return data as { success: boolean };
   },
 
   // Invitations
@@ -89,7 +98,7 @@ export const api = {
     const res = await fetch(`${API_BASE}/events/${eventId}/guests`, { cache: 'no-store' });
     return res.json();
   },
-  updateGuest: async (id: string, data: Partial<Pick<GuestGroup, 'attendees' | 'note' | 'tableId'>>): Promise<{ success: boolean }> => {
+  updateGuest: async (id: string, data: Partial<Pick<GuestGroup, 'attendees' | 'note' | 'tableId' | 'arrivedAt'>>): Promise<{ success: boolean }> => {
     const res = await fetch(`${API_BASE}/guests/${id}`, {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
@@ -124,5 +133,54 @@ export const api = {
       body: JSON.stringify({ guestGroupId, tableId }),
     });
     return res.json();
+  },
+
+  // SuperAdmin Clients
+  getClients: async (): Promise<ClientAccount[]> => {
+    const res = await fetch(`${API_BASE}/clients`);
+    return res.json();
+  },
+  getClientAnalytics: async (): Promise<ClientAnalytics> => {
+    const res = await fetch(`${API_BASE}/clients/analytics`);
+    return res.json();
+  },
+  createClient: async (payload: Omit<ClientAccount, 'id' | 'createdAt'>): Promise<{ id: string; success: boolean; emailSent: boolean; message: string }> => {
+    const res = await fetch(`${API_BASE}/clients`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+    const data = await parseJson(res);
+    if (!res.ok) throw new Error((data as { error?: string }).error || `Failed (${res.status})`);
+    return data as { id: string; success: boolean; emailSent: boolean; message: string };
+  },
+  updateClient: async (id: string, payload: Partial<Omit<ClientAccount, 'id' | 'createdAt'>>): Promise<{ success: boolean }> => {
+    const res = await fetch(`${API_BASE}/clients/${id}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+    const data = await parseJson(res);
+    if (!res.ok) throw new Error((data as { error?: string }).error || `Failed (${res.status})`);
+    return data as { success: boolean };
+  },
+  deleteClient: async (id: string): Promise<{ success: boolean }> => {
+    const res = await fetch(`${API_BASE}/clients/${id}`, { method: 'DELETE' });
+    const data = await parseJson(res);
+    if (!res.ok) throw new Error((data as { error?: string }).error || `Failed (${res.status})`);
+    return data as { success: boolean };
+  },
+  loginClient: async (payload: { email: string; password: string }): Promise<ClientAccount> => {
+    const query = new URLSearchParams({
+      email: payload.email,
+      password: payload.password,
+    });
+    const res = await fetch(`${API_BASE}/clients/login?${query.toString()}`, {
+      method: 'GET',
+      signal: createTimeoutSignal(),
+    });
+    const data = await parseJson(res);
+    if (!res.ok) throw new Error((data as { error?: string }).error || `Failed (${res.status})`);
+    return data as ClientAccount;
   },
 };

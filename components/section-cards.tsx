@@ -3,13 +3,12 @@
 import { Badge } from "@/components/ui/badge"
 import {
   Card,
-  CardAction,
+  CardContent,
   CardDescription,
-  CardFooter,
   CardHeader,
   CardTitle,
 } from "@/components/ui/card"
-import { TrendingUpIcon, TrendingDownIcon } from "lucide-react"
+import { TrendingUpIcon } from "lucide-react"
 
 interface SectionCardsProps {
   invitationsSent: number
@@ -29,99 +28,58 @@ export function SectionCards({
       ? Math.round((invitationsResponded / invitationsSent) * 100)
       : 0
 
+  const cards = [
+    {
+      key: "sent",
+      title: "Ftesa të dërguara",
+      value: invitationsSent,
+      badge: `+${invitationsSent}`,
+      description: "Fushata aktuale e ngjarjes",
+    },
+    {
+      key: "responded",
+      title: "Ftesa të përgjigjura",
+      value: invitationsResponded,
+      badge: `${responseRate}%`,
+      description: "Bazuar në ftesat e dërguara",
+    },
+    {
+      key: "guests",
+      title: "Totali i të ftuarve",
+      value: totalGuests,
+      badge: "Aktive",
+      description: "Në të gjitha grupet e të ftuarve",
+    },
+    {
+      key: "tables",
+      title: "Tavolina të krijuara",
+      value: tablesCreated,
+      badge: `+${tablesCreated}`,
+      description: "Tavolina të gatshme për caktim",
+    },
+  ]
+
   return (
-    <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4 *:data-[slot=card]:bg-gradient-to-t *:data-[slot=card]:from-primary/5 *:data-[slot=card]:to-card *:data-[slot=card]:shadow-xs dark:*:data-[slot=card]:bg-card">
-      <Card className="@container/card">
-        <CardHeader>
-          <CardDescription>Invitations Sent</CardDescription>
-          <CardTitle className="text-2xl font-semibold tabular-nums @[250px]/card:text-3xl">
-            {invitationsSent}
-          </CardTitle>
-          <CardAction>
-            <Badge variant="outline">
-              <TrendingUpIcon
-              />
-              +{invitationsSent}
-            </Badge>
-          </CardAction>
-        </CardHeader>
-        <CardFooter className="flex-col items-start gap-1.5 text-sm">
-          <div className="line-clamp-1 flex gap-2 font-medium">
-            Sent invitations{" "}
-            <TrendingUpIcon className="size-4" />
-          </div>
-          <div className="text-muted-foreground">
-            Current event campaign
-          </div>
-        </CardFooter>
-      </Card>
-      <Card className="@container/card">
-        <CardHeader>
-          <CardDescription>Invitations Responded</CardDescription>
-          <CardTitle className="text-2xl font-semibold tabular-nums @[250px]/card:text-3xl">
-            {invitationsResponded}
-          </CardTitle>
-          <CardAction>
-            <Badge variant="outline">
-              <TrendingUpIcon />
-              {responseRate}%
-            </Badge>
-          </CardAction>
-        </CardHeader>
-        <CardFooter className="flex-col items-start gap-1.5 text-sm">
-          <div className="line-clamp-1 flex gap-2 font-medium">
-            Response rate{" "}
-            <TrendingUpIcon className="size-4" />
-          </div>
-          <div className="text-muted-foreground">
-            Based on sent invitations
-          </div>
-        </CardFooter>
-      </Card>
-      <Card className="@container/card">
-        <CardHeader>
-          <CardDescription>Total Guests</CardDescription>
-          <CardTitle className="text-2xl font-semibold tabular-nums @[250px]/card:text-3xl">
-            {totalGuests}
-          </CardTitle>
-          <CardAction>
-            <Badge variant="outline">
-              <TrendingUpIcon
-              />
-              +12.5%
-            </Badge>
-          </CardAction>
-        </CardHeader>
-        <CardFooter className="flex-col items-start gap-1.5 text-sm">
-          <div className="line-clamp-1 flex gap-2 font-medium">
-            Confirmed guest count{" "}
-            <TrendingUpIcon className="size-4" />
-          </div>
-          <div className="text-muted-foreground">Across all guest groups</div>
-        </CardFooter>
-      </Card>
-      <Card className="@container/card">
-        <CardHeader>
-          <CardDescription>Tables Created</CardDescription>
-          <CardTitle className="text-2xl font-semibold tabular-nums @[250px]/card:text-3xl">
-            {tablesCreated}
-          </CardTitle>
-          <CardAction>
-            <Badge variant="outline">
-              <TrendingUpIcon
-              />
-              +{tablesCreated}
-            </Badge>
-          </CardAction>
-        </CardHeader>
-        <CardFooter className="flex-col items-start gap-1.5 text-sm">
-          <div className="line-clamp-1 flex gap-2 font-medium">
-            Seating layout progress{" "}
-            <TrendingUpIcon className="size-4" />
-          </div>
-          <div className="text-muted-foreground">Tables available for assignment</div>
-        </CardFooter>
-      </Card>
+    <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
+      {cards.map((card) => (
+        <Card key={card.key}>
+          <CardHeader className="pb-2">
+            <CardDescription>{card.title}</CardDescription>
+            <div className="flex items-center justify-between gap-2">
+              <CardTitle className="text-3xl font-semibold tabular-nums">
+                {card.value}
+              </CardTitle>
+              <Badge variant="secondary" className="gap-1">
+                <TrendingUpIcon className="size-3.5" />
+                {card.badge}
+              </Badge>
+            </div>
+          </CardHeader>
+          <CardContent>
+            <p className="text-sm text-muted-foreground">{card.description}</p>
+          </CardContent>
+        </Card>
+      ))}
     </div>
   )
 }

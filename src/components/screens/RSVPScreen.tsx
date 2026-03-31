@@ -15,7 +15,7 @@ import { api } from '../../services/api';
 import { Invitation, EventDetails } from '../../types';
 import { THEMES, InvitationVector } from '../../constants';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 
@@ -48,6 +48,7 @@ export const RSVPScreen: React.FC<RSVPScreenProps> = ({ token }) => {
   }, [token]);
 
   const currentTheme = invitation ? (THEMES.find(t => t.id === invitation.theme) || THEMES[0]) : THEMES[0];
+  const invitationData = invitation as (Invitation & EventDetails & { eventName?: string; eventDate?: string; eventTime?: string });
 
   const handleSubmit = async () => {
     if (!attendance) return;
@@ -60,7 +61,7 @@ export const RSVPScreen: React.FC<RSVPScreenProps> = ({ token }) => {
       });
       setStep('success');
     } catch (err) {
-      alert('Dështoi dërgimi i RSVP. Ju lutem provoni përsëri.');
+      alert('Dështoi dërgimi i përgjigjes. Ju lutem provoni përsëri.');
     }
   };
 
@@ -76,7 +77,7 @@ export const RSVPScreen: React.FC<RSVPScreenProps> = ({ token }) => {
         <XCircle size={64} className="mx-auto text-red-500 mb-4" />
         <h1 className="text-2xl font-bold text-slate-900 mb-2">Oops!</h1>
         <p className="text-slate-500 mb-6">{error || 'Ftesa nuk u gjet.'}</p>
-        <Button asChild className="px-6 py-3 font-bold shadow-lg shadow-primary/20">
+        <Button asChild>
           <a href="/">Shko në Faqen Kryesore</a>
         </Button>
       </div>
@@ -107,22 +108,35 @@ export const RSVPScreen: React.FC<RSVPScreenProps> = ({ token }) => {
 
               <div className="relative z-10 space-y-8 w-full">
                 <div className="space-y-4">
-                  <p className="font-bold uppercase tracking-[0.3em] text-sm" style={{ color: currentTheme.primary }}>Jeni të ftuar në</p>
-                  <h3 className="text-6xl font-handwritten tracking-normal leading-tight">{invitation.name}</h3>
+                  <p className="font-bold uppercase tracking-[0.3em] text-sm" style={{ color: currentTheme.primary }}>
+                    {invitation.invitationHeading || 'Jeni të ftuar ne dasmen'}
+                  </p>
+                  <h3 className="text-6xl font-handwritten tracking-normal leading-tight">
+                    {invitationData.name || invitationData.eventName || 'Ngjarja Juaj'}
+                  </h3>
                 </div>
 
                 <div className="h-px w-20 mx-auto" style={{ backgroundColor: currentTheme.accent }} />
 
-                <p className="text-lg font-medium leading-relaxed italic opacity-80">
-                  Përshëndetje <span className="font-bold" style={{ color: currentTheme.primary }}>{invitation.inviteeName}</span>, 
-                  {invitation.message ? ` "${invitation.message}"` : " do të ishim të nderuar t'ju kishim me ne në këtë rast të veçantë."}
+                <p className="text-lg font-medium leading-relaxed opacity-80">
+                  Përshëndetje{' '}
+                  <span className="font-bold" style={{ color: currentTheme.primary }}>
+                    {invitation.inviteeName}
+                  </span>
+                  , {invitation.message || "Do të ishim të nderuar t'ju kishim me ne në këtë rast të veçantë."}
                 </p>
                 
                 <div className="grid grid-cols-1 gap-6 py-8 border-y" style={{ borderColor: currentTheme.accent }}>
                   <div className="flex flex-col items-center gap-2">
                     <Calendar size={24} style={{ color: currentTheme.primary }} />
-                    <p className="font-bold text-xl">{new Date(invitation.date).toLocaleDateString('sq-AL', { dateStyle: 'full' })}</p>
-                    {invitation.time && <p className="opacity-60 flex items-center gap-1 text-sm"><Clock size={14} /> {invitation.time}</p>}
+                    <p className="font-bold text-xl">
+                      {new Date(invitationData.date || invitationData.eventDate || new Date().toISOString()).toLocaleDateString('sq-AL', { dateStyle: 'full' })}
+                    </p>
+                    {(invitationData.time || invitationData.eventTime) && (
+                      <p className="opacity-60 flex items-center gap-1 text-sm">
+                        <Clock size={14} /> {invitationData.time || invitationData.eventTime}
+                      </p>
+                    )}
                   </div>
                   
                   <div className="flex flex-col items-center gap-2">
@@ -149,10 +163,11 @@ export const RSVPScreen: React.FC<RSVPScreenProps> = ({ token }) => {
 
                 <Button
                   onClick={() => setStep('form')}
-                  className="w-full py-4 font-black rounded-xl shadow-xl uppercase tracking-widest transition-all hover:scale-105 flex items-center justify-center gap-2"
-                  style={{ backgroundColor: currentTheme.primary, color: currentTheme.bg, boxShadow: `0 10px 30px ${currentTheme.accent}` }}
+                  size="lg"
+                  className="w-full flex items-center justify-center gap-2"
+                  style={{ backgroundColor: currentTheme.primary, color: currentTheme.bg }}
                 >
-                  RSVP Tani
+                  Përgjigju ftesës
                   <ArrowRight size={20} />
                 </Button>
               </div>
@@ -165,19 +180,21 @@ export const RSVPScreen: React.FC<RSVPScreenProps> = ({ token }) => {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -20 }}
-              className="rounded-3xl shadow-2xl"
+              className="rounded-xl"
             >
-              <Card className="border-slate-100">
-                <CardContent className="p-8 md:p-12">
-              <h2 className="text-2xl font-bold text-center mb-8 text-slate-900">Konfirmoni Pjesëmarrjen Tuaj</h2>
-              
-              <div className="space-y-8">
-                <div className="flex gap-4">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Konfirmoni Pjesëmarrjen Tuaj</CardTitle>
+                  <CardDescription>Zgjidhni nëse do të merrni pjesë dhe plotësoni detajet e nevojshme.</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-6">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <Button
                     onClick={() => setAttendance('Yes')}
                     variant="outline"
-                    className={`flex-1 py-4 rounded-2xl border-2 font-bold transition-all flex flex-col items-center gap-2 ${
-                      attendance === 'Yes' ? 'border-primary bg-primary/5 text-primary' : 'border-slate-100 text-slate-400 hover:border-primary/30'
+                    size="lg"
+                    className={`h-auto flex flex-col items-center gap-2 ${
+                      attendance === 'Yes' ? 'border-primary bg-primary/5 text-primary' : ''
                     }`}
                   >
                     <CheckCircle2 size={24} />
@@ -186,8 +203,9 @@ export const RSVPScreen: React.FC<RSVPScreenProps> = ({ token }) => {
                   <Button
                     onClick={() => setAttendance('No')}
                     variant="outline"
-                    className={`flex-1 py-4 rounded-2xl border-2 font-bold transition-all flex flex-col items-center gap-2 ${
-                      attendance === 'No' ? 'border-red-500 bg-red-50 text-red-500' : 'border-slate-100 text-slate-400 hover:border-red-300'
+                    size="lg"
+                    className={`h-auto flex flex-col items-center gap-2 ${
+                      attendance === 'No' ? 'border-red-500 bg-red-50 text-red-600' : ''
                     }`}
                   >
                     <XCircle size={24} />
@@ -201,7 +219,7 @@ export const RSVPScreen: React.FC<RSVPScreenProps> = ({ token }) => {
                     animate={{ opacity: 1, height: 'auto' }}
                     className="space-y-4"
                   >
-                    <label className="text-sm font-bold text-slate-600 uppercase tracking-wider">Kush po vjen me ju?</label>
+                    <p className="text-sm font-medium text-muted-foreground">Kush po vjen me ju?</p>
                     {Array.from({ length: invitation.allowedGuests }).map((_, i) => (
                       <div key={i} className="relative">
                         <Users className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
@@ -221,11 +239,11 @@ export const RSVPScreen: React.FC<RSVPScreenProps> = ({ token }) => {
                 )}
 
                 <div className="space-y-2">
-                  <label className="text-sm font-bold text-slate-600 uppercase tracking-wider">Mesazh për Pritësin (Opsionale)</label>
+                  <p className="text-sm font-medium text-muted-foreground">Mesazh për Pritësin (Opsionale)</p>
                   <Textarea
                     value={note}
                     onChange={e => setNote(e.target.value)}
-                    className="h-24 p-4 resize-none" 
+                    className="min-h-24 resize-none" 
                     placeholder="Çdo kërkesë diete ose mesazh i veçantë..."
                   />
                 </div>
@@ -233,20 +251,19 @@ export const RSVPScreen: React.FC<RSVPScreenProps> = ({ token }) => {
                 <div className="flex gap-4">
                   <Button
                     onClick={() => setStep('info')}
-                    variant="ghost"
-                    className="flex-1 py-4 text-slate-500 font-bold hover:underline"
+                    variant="outline"
+                    className="flex-1"
                   >
                     Mbrapa
                   </Button>
                   <Button
                     disabled={!attendance}
                     onClick={handleSubmit}
-                    className="flex-[2] py-4 bg-primary text-white font-bold rounded-2xl shadow-xl shadow-primary/20 hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+                    className="flex-[2]"
                   >
-                    Dërgo RSVP
+                    Dërgo
                   </Button>
                 </div>
-              </div>
                 </CardContent>
               </Card>
             </motion.div>
@@ -264,7 +281,7 @@ export const RSVPScreen: React.FC<RSVPScreenProps> = ({ token }) => {
               </div>
               <h2 className="text-3xl font-bold text-slate-900 mb-4">Faleminderit!</h2>
               <p className="text-slate-500 mb-8 text-lg">
-                RSVP juaj u dërgua me sukses. Ne kemi njoftuar pritësin për përgjigjen tuaj.
+                Përgjigjja juaj u dërgua me sukses. Ne kemi njoftuar pritësin.
               </p>
               <div className="p-6 bg-slate-50 rounded-2xl text-left mb-8">
                 <p className="text-xs font-bold text-slate-400 uppercase mb-2">Përgjigjja Juaj</p>

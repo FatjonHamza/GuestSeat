@@ -38,7 +38,7 @@ export const CreateEventScreen: React.FC<CreateEventScreenProps> = ({ onComplete
           </div>
           <h2 className="text-2xl font-serif font-bold text-slate-900">GuestSeat</h2>
         </div>
-        <Button variant="ghost" className="text-sm font-medium">Hyni</Button>
+        <Button variant="ghost">Hyni</Button>
       </header>
       <main className="flex-1 flex items-center justify-center p-6">
         <motion.div 
@@ -139,7 +139,7 @@ export const CreateEventScreen: React.FC<CreateEventScreenProps> = ({ onComplete
               </div>
 
               <div className="pt-4">
-                <Button type="submit" className="w-full h-12 font-bold shadow-lg shadow-primary/20 transition-all hover:-translate-y-0.5 active:translate-y-0">
+                <Button type="submit" size="lg" className="w-full">
                   Krijo Ngjarjen
                 </Button>
               </div>

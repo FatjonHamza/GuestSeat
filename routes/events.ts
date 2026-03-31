@@ -11,6 +11,7 @@ const EventSchema = z.object({
   name: z.string().min(1),
   date: z.string().min(1),
   time: z.string().min(1).nullable().optional(),
+  invitationHeading: z.string().nullable().optional(),
   venueName: z.string().min(1),
   venueAddress: z.string().nullable().optional(),
   venueMapUrl: z.string().nullable().optional(),
@@ -21,11 +22,26 @@ const EventSchema = z.object({
 
 const EventPatchSchema = EventSchema.partial();
 
+function normalizeEventResponse(event: EventRow | Record<string, unknown>) {
+  const mapped = mapToCamelCase(event) as Record<string, unknown>;
+  mapped.invitationHeading =
+    (mapped.invitationHeading as string | null | undefined) ??
+    (mapped.invitationHeadline as string | null | undefined) ??
+    null;
+  delete mapped.invitationHeadline;
+  return mapped;
+}
+
 router.post(
   "/",
   syncHandler((req, res) => {
     const parsed = EventSchema.parse({
       ...req.body,
+      invitationHeading:
+        req.body.invitationHeading ??
+        req.body.invitationHeadline ??
+        req.body.invitation_heading ??
+        req.body.invitation_headline,
       venueName: req.body.venueName ?? req.body.venue_name,
       venueAddress: req.body.venueAddress ?? req.body.venue_address,
       venueMapUrl: req.body.venueMapUrl ?? req.body.venue_map_url,
@@ -35,14 +51,15 @@ router.post(
     const id = uuidv4();
     db.prepare(
       `
-        INSERT INTO events (id, name, date, time, venue_name, venue_address, venue_map_url, message, rsvp_deadline, theme)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        INSERT INTO events (id, name, date, time, invitation_headline, venue_name, venue_address, venue_map_url, message, rsvp_deadline, theme)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       `,
     ).run(
       id,
       parsed.name,
       parsed.date,
       parsed.time ?? null,
+      parsed.invitationHeading ?? null,
       parsed.venueName,
       parsed.venueAddress ?? null,
       parsed.venueMapUrl ?? null,
@@ -56,6 +73,7 @@ router.post(
       name: parsed.name,
       date: parsed.date,
       venueName: parsed.venueName,
+      invitationHeading: parsed.invitationHeading ?? null,
       theme: parsed.theme ?? "default",
     });
   }),
@@ -65,7 +83,7 @@ router.get(
   "/",
   syncHandler((req, res) => {
     const events = db.prepare("SELECT * FROM events").all() as EventRow[];
-    res.json(mapToCamelCase(events));
+    res.json(events.map((event) => normalizeEventResponse(event)));
   }),
 );
 
@@ -78,7 +96,7 @@ router.get(
     if (!event) {
       return res.status(404).json({ error: "Event not found" });
     }
-    res.json(mapToCamelCase(event));
+    res.json(normalizeEventResponse(event));
   }),
 );
 
@@ -87,6 +105,11 @@ router.patch(
   syncHandler((req, res) => {
     const parsed = EventPatchSchema.parse({
       ...req.body,
+      invitationHeading:
+        req.body.invitationHeading ??
+        req.body.invitationHeadline ??
+        req.body.invitation_heading ??
+        req.body.invitation_headline,
       venueName: req.body.venueName ?? req.body.venue_name,
       venueAddress: req.body.venueAddress ?? req.body.venue_address,
       venueMapUrl: req.body.venueMapUrl ?? req.body.venue_map_url,
@@ -99,6 +122,7 @@ router.patch(
         SET name = COALESCE(?, name),
             date = COALESCE(?, date),
             time = COALESCE(?, time),
+            invitation_headline = COALESCE(?, invitation_headline),
             venue_name = COALESCE(?, venue_name),
             venue_address = COALESCE(?, venue_address),
             venue_map_url = COALESCE(?, venue_map_url),
@@ -111,6 +135,7 @@ router.patch(
       parsed.name ?? null,
       parsed.date ?? null,
       parsed.time ?? null,
+      parsed.invitationHeading ?? null,
       parsed.venueName ?? null,
       parsed.venueAddress ?? null,
       parsed.venueMapUrl ?? null,

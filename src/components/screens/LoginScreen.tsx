@@ -16,20 +16,63 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 
 interface LoginScreenProps {
-  onLogin: () => void;
+  onLogin: (credentials: { email: string; password: string; accountName: string }) => Promise<void>;
 }
 
 export const LoginScreen: React.FC<LoginScreenProps> = ({ onLogin }) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const formatAccountName = (value: string) => {
+    const [localPart = '', domainPart = ''] = value.split('@');
+    const localTokens = localPart
+      .split(/[._-]+/)
+      .map(token => token.trim())
+      .filter(Boolean);
+    const domainRoot = domainPart.split('.')[0]?.trim();
+
+    if (localTokens.length >= 2) {
+      return localTokens
+        .slice(0, 2)
+        .map(token => token.charAt(0).toUpperCase() + token.slice(1))
+        .join(' ');
+    }
+
+    // Handle emails like admin@guestseat.com -> Admin Guestseat
+    if (localTokens.length === 1 && domainRoot) {
+      const first = localTokens[0];
+      const last = domainRoot;
+      return `${first.charAt(0).toUpperCase() + first.slice(1)} ${last.charAt(0).toUpperCase() + last.slice(1)}`;
+    }
+
+    if (localTokens.length === 1) {
+      const token = localTokens[0];
+      return token.charAt(0).toUpperCase() + token.slice(1);
+    }
+
+    return 'Përdorues GuestSeat';
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (email === 'admin@guestseat.com' && password === 'password123') {
-      onLogin();
-    } else {
-      setError('Email ose fjalëkalim i pavlefshëm. Ju lutem përdorni kredencialet e dhëna më poshtë.');
+    setError('');
+    setIsSubmitting(true);
+    try {
+      await onLogin({
+        email: email.trim(),
+        password,
+        accountName: formatAccountName(email),
+      });
+    } catch (err) {
+      if (err instanceof DOMException && err.name === 'AbortError') {
+        setError('Kërkesa për hyrje skadoi. Kontrolloni lidhjen dhe provoni përsëri.');
+      } else {
+        setError(err instanceof Error ? err.message : 'Dështoi hyrja në llogari.');
+      }
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -42,12 +85,12 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ onLogin }) => {
       >
         <Card className="w-full max-w-md">
           <CardHeader>
-            <CardTitle className="text-2xl">Login to your account</CardTitle>
+            <CardTitle className="text-2xl">Hyni në llogarinë tuaj</CardTitle>
             <CardDescription>
-              Enter your email below to login to your account
+              Shkruani emailin më poshtë për të hyrë në llogarinë tuaj
             </CardDescription>
             <CardAction>
-              <Button variant="link" className="px-0">Sign Up</Button>
+              <Button variant="link">Regjistrohu</Button>
             </CardAction>
           </CardHeader>
           <CardContent>
@@ -70,12 +113,12 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ onLogin }) => {
                 </div>
                 <div className="grid gap-2">
                   <div className="flex items-center">
-                    <Label htmlFor="password">Password</Label>
+                    <Label htmlFor="password">Fjalëkalimi</Label>
                     <a
                       href="#"
                       className="ml-auto inline-block text-sm underline-offset-4 hover:underline"
                     >
-                      Forgot your password?
+                      Keni harruar fjalëkalimin?
                     </a>
                   </div>
                   <div className="relative">
@@ -99,17 +142,16 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ onLogin }) => {
             </form>
           </CardContent>
           <CardFooter className="flex-col gap-2">
-            <Button type="submit" form="login-form" className="w-full group">
-              <span>Login</span>
+            <Button type="submit" form="login-form" className="w-full group" disabled={isSubmitting}>
+              <span>{isSubmitting ? 'Duke hyrë...' : 'Hyr'}</span>
               <ArrowRight size={16} className="group-hover:translate-x-1 transition-transform" />
             </Button>
             <Button variant="outline" className="w-full">
-              Login with Google
+              Hyr me Google
             </Button>
             <div className="mt-2 w-full rounded-lg border bg-muted/40 p-3 text-sm">
-              <p className="mb-1 font-medium">Demo credentials</p>
-              <p className="text-muted-foreground">Email: admin@guestseat.com</p>
-              <p className="text-muted-foreground">Password: password123</p>
+              <p className="mb-1 font-medium">Përdor kredencialet e dërguara me email</p>
+              <p className="text-muted-foreground">Këto kredenciale krijohen nga SuperAdmin.</p>
             </div>
           </CardFooter>
         </Card>

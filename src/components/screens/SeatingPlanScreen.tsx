@@ -1,17 +1,32 @@
 import React, { useState } from 'react';
-import { 
-  GripVertical, 
-  PlusCircle, 
-  MoreVertical, 
-  Inbox, 
-  X, 
-  UserPlus 
+import {
+  GripVertical,
+  PlusCircle,
+  Inbox,
+  X,
+  UserPlus,
+  Users,
 } from 'lucide-react';
-import { motion, AnimatePresence } from 'motion/react';
 import { GuestGroup, Table } from '../../types';
+import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 interface SeatingPlanScreenProps {
   groups: GuestGroup[];
@@ -29,7 +44,7 @@ export const SeatingPlanScreen: React.FC<SeatingPlanScreenProps> = ({ groups, ta
   const [newTableCapacity, setNewTableCapacity] = useState(10);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [dragOverTableId, setDragOverTableId] = useState<string | null>(null);
-  
+
   const handleDragStart = (e: React.DragEvent, groupId: string) => {
     e.dataTransfer.setData('groupId', groupId);
   };
@@ -53,271 +68,225 @@ export const SeatingPlanScreen: React.FC<SeatingPlanScreenProps> = ({ groups, ta
     try {
       await onCreateTable(newTableName.trim(), newTableCapacity);
       setIsAddTableOpen(false);
+      setNewTableName('');
+      setNewTableCapacity(10);
     } finally {
       setIsSubmitting(false);
     }
   };
 
   return (
-    <div className="flex h-full overflow-hidden -m-10">
-      <aside 
-        className={`w-80 flex flex-col border-r bg-white shrink-0 transition-all ${
-          isSidebarOver ? 'border-primary bg-primary/5 ring-2 ring-inset ring-primary/20' : 'border-primary/10'
-        }`}
-        onDragOver={(e) => { handleDragOver(e); setIsSidebarOver(true); }}
-        onDragLeave={() => setIsSidebarOver(false)}
-        onDrop={(e) => { handleDrop(e, undefined); setIsSidebarOver(false); }}
-      >
-        <div className="p-4 border-b border-primary/10">
-          <div className="flex items-center justify-between mb-2">
-            <h3 className="text-sm font-bold uppercase tracking-wider text-slate-500">Të paatribuar</h3>
-            <span className="rounded-full bg-primary/10 px-2 py-0.5 text-xs font-bold text-primary tracking-tighter">
-              {unassignedGroups.length} Grupe
-            </span>
-          </div>
-          <p className="text-xs text-slate-400">Tërhiqni grupet në tavolina për të caktuar uljen</p>
+    <div className="space-y-8">
+      <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-6">
+        <div className="space-y-1">
+          <h1 className="text-3xl font-bold tracking-tight">Plani i Uljes</h1>
+          <p className="text-sm text-muted-foreground">Menaxhoni caktimet e tavolinave dhe kapacitetin e secilës tavolinë.</p>
         </div>
-        <div className="flex-1 overflow-y-auto p-4 space-y-3 custom-scrollbar">
-          {unassignedGroups.map((group) => (
-            <motion.div 
-              layoutId={group.id}
-              key={group.id}
-              draggable
-              onDragStart={(e) => handleDragStart(e, group.id)}
-              className="group cursor-grab active:cursor-grabbing rounded-xl border border-slate-200 bg-white p-3 shadow-sm hover:border-primary/50 transition-all"
-            >
-              <div className="flex items-start justify-between">
-                <div>
-                  <h4 className="font-semibold text-sm text-slate-800">{group.attendees[0] || 'Grupi i të Ftuarve'}</h4>
-                  <p className="text-xs text-slate-500 mt-0.5">{group.groupSize} anëtarë</p>
-                </div>
-                <GripVertical className="text-slate-300 group-hover:text-primary" size={18} />
-              </div>
-              <div className="mt-2 flex -space-x-2">
-                {group.attendees.slice(0, 3).map((m, i) => (
-                  <div 
-                    key={i}
-                    className="h-6 w-6 rounded-full border-2 border-white bg-slate-200 bg-cover flex items-center justify-center text-[8px] font-bold"
-                  >
-                    {m[0]}
-                  </div>
-                ))}
-                {group.attendees.length > 3 && (
-                  <div className="h-6 w-6 flex items-center justify-center rounded-full border-2 border-white bg-slate-100 text-[8px] font-bold">
-                    +{group.attendees.length - 3}
-                  </div>
-                )}
-              </div>
-              <div className="mt-3 flex gap-2">
-                <select 
-                  className="text-[10px] p-1 border rounded bg-slate-50 w-full"
-                  onChange={(e) => onAssign(group.id, e.target.value || undefined)}
-                  value=""
-                >
-                  <option value="" disabled>Atribuo në...</option>
-                  {tables.map(t => (
-                    <option key={t.id} value={t.id}>{t.name}</option>
-                  ))}
-                </select>
-              </div>
-            </motion.div>
-          ))}
-        </div>
-        <div className="p-4 border-t border-primary/10">
-          <Button
-            className="w-full flex items-center justify-center gap-2 rounded-lg bg-primary py-2.5 text-sm font-bold text-white hover:bg-primary/90 transition-all"
-            onClick={() => onCreateGuest({ attendees: ['Mysafir i ri'] })}
-          >
-            <UserPlus size={18} />
+        <div className="flex items-center gap-2">
+          <Button variant="outline" onClick={() => onCreateGuest({ attendees: ['Mysafir i ri'] })}>
+            <UserPlus size={16} />
             Shto mysafirin e ri
           </Button>
+          <Button
+            onClick={() => {
+              setNewTableName(`Tavolina ${tables.length + 1}`);
+              setNewTableCapacity(10);
+              setIsAddTableOpen(true);
+            }}
+          >
+            <PlusCircle size={16} />
+            Shto Tavolinë
+          </Button>
         </div>
-      </aside>
+      </div>
 
-      <section className="flex-1 overflow-y-auto bg-background-light p-8 custom-scrollbar">
-        <div className="max-w-6xl mx-auto">
-          <div className="flex items-end justify-between mb-8">
-            <div>
-              <h1 className="text-2xl font-bold text-slate-900">Plani i Uljes</h1>
-              <p className="text-slate-500 mt-1">Menaxhoni caktimet e tavolinave dhe kapacitetin</p>
+      <div className="grid grid-cols-1 xl:grid-cols-[320px_1fr] gap-6">
+        <Card
+          onDragOver={(e) => { handleDragOver(e); setIsSidebarOver(true); }}
+          onDragLeave={() => setIsSidebarOver(false)}
+          onDrop={(e) => { handleDrop(e, undefined); setIsSidebarOver(false); }}
+          className={isSidebarOver ? 'ring-2 ring-primary/30 border-primary/50' : ''}
+        >
+          <CardHeader>
+            <div className="flex items-center justify-between gap-3">
+              <CardTitle className="text-base">Të paatribuar</CardTitle>
+              <Badge variant="secondary">{unassignedGroups.length} grupe</Badge>
             </div>
-            <div className="flex gap-3">
+            <CardDescription>Tërhiqni grupet në tavolina ose përdorni menynë e caktimit.</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-3 max-h-[70vh] overflow-y-auto overflow-x-hidden px-4 py-1">
+            {unassignedGroups.length > 0 ? (
+              unassignedGroups.map((group) => (
+                <Card
+                  key={group.id}
+                  draggable
+                  onDragStart={(e) => handleDragStart(e, group.id)}
+                  className="w-full max-w-full cursor-grab active:cursor-grabbing border border-border/80 ring-0 shadow-sm"
+                  size="sm"
+                >
+                  <CardContent className="space-y-3">
+                    <div className="flex items-start justify-between">
+                      <div>
+                        <p className="font-medium">{group.attendees[0] || 'Grupi i të ftuarve'}</p>
+                        <p className="text-xs text-muted-foreground">{group.groupSize} anëtarë</p>
+                      </div>
+                      <GripVertical size={16} className="text-muted-foreground" />
+                    </div>
+                    <div className="flex flex-wrap gap-1.5">
+                      {group.attendees.slice(0, 3).map((name, i) => (
+                        <Badge key={i} variant="outline">{name}</Badge>
+                      ))}
+                      {group.attendees.length > 3 && (
+                        <Badge variant="outline">+{group.attendees.length - 3}</Badge>
+                      )}
+                    </div>
+                    <Select onValueChange={(value) => onAssign(group.id, value || undefined)}>
+                      <SelectTrigger className="w-full">
+                        <SelectValue placeholder="Atribuo në tavolinë..." />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {tables.map((t) => (
+                          <SelectItem key={t.id} value={t.id}>{t.name}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </CardContent>
+                </Card>
+              ))
+            ) : (
+              <div className="py-10 text-center text-muted-foreground">
+                <Inbox size={28} className="mx-auto mb-2 opacity-60" />
+                <p className="text-sm">Nuk ka grupe të paatribuar.</p>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+          {tables.map((table) => {
+            const assignedGroups = groups.filter(g => g.tableId === table.id);
+            const currentTotal = assignedGroups.reduce((acc, g) => acc + g.groupSize, 0);
+            const isOverCapacity = currentTotal > table.capacity;
+            const isFull = currentTotal === table.capacity;
+            const isOver = dragOverTableId === table.id;
+
+            return (
+              <Card
+                key={table.id}
+                onDragOver={(e) => { handleDragOver(e); setDragOverTableId(table.id); }}
+                onDragLeave={() => setDragOverTableId(null)}
+                onDrop={(e) => { handleDrop(e, table.id); setDragOverTableId(null); }}
+                className={isOver ? 'ring-2 ring-primary/30 border-primary/50' : ''}
+              >
+                <CardHeader>
+                  <div className="flex items-center justify-between gap-3">
+                    <CardTitle className="text-base">{table.name}</CardTitle>
+                    <Badge variant={isOverCapacity ? 'destructive' : isFull ? 'secondary' : 'outline'}>
+                      {currentTotal}/{table.capacity}
+                    </Badge>
+                  </div>
+                  <CardDescription>
+                    {isOverCapacity ? `Mbi kapacitet me ${currentTotal - table.capacity}` : isFull ? 'Tavolina është plot' : 'Ka vende të lira'}
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-2 min-h-[150px]">
+                  {assignedGroups.length > 0 ? (
+                    assignedGroups.map(group => (
+                      <div
+                        key={group.id}
+                        draggable
+                        onDragStart={(e) => handleDragStart(e, group.id)}
+                        className="flex items-center justify-between rounded-md border bg-card px-3 py-2 text-sm cursor-grab active:cursor-grabbing"
+                      >
+                        <span className="truncate">{group.attendees[0]}</span>
+                        <div className="flex items-center gap-2">
+                          <Badge variant="outline">{group.groupSize}</Badge>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => onAssign(group.id, undefined)}
+                            className="h-7 w-7"
+                            title="Hiq nga tavolina"
+                          >
+                            <X size={14} />
+                          </Button>
+                        </div>
+                      </div>
+                    ))
+                  ) : (
+                    <div className="h-full min-h-[100px] flex items-center justify-center text-muted-foreground text-sm">
+                      Lëshoni grupet këtu
+                    </div>
+                  )}
+                </CardContent>
+                {isOverCapacity && (
+                  <CardFooter>
+                    <p className="text-xs text-destructive font-medium">
+                      Veprimi i kërkuar: Zhvendosni {currentTotal - table.capacity} të ftuar.
+                    </p>
+                  </CardFooter>
+                )}
+              </Card>
+            );
+          })}
+
+          <Card className="border-dashed">
+            <CardContent className="min-h-[220px] flex flex-col items-center justify-center text-center">
               <Button
-                className="flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-bold text-white hover:bg-primary/90 transition-all"
+                variant="outline"
                 onClick={() => {
                   setNewTableName(`Tavolina ${tables.length + 1}`);
                   setNewTableCapacity(10);
                   setIsAddTableOpen(true);
                 }}
               >
-                <PlusCircle size={18} />
-                Shto Tavolinë
+                <PlusCircle size={16} />
+                Tavolinë e re
+              </Button>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+
+      <Dialog open={isAddTableOpen} onOpenChange={setIsAddTableOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Shto Tavolinë</DialogTitle>
+          </DialogHeader>
+          <form onSubmit={handleAddTableSubmit} className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="tableName">Emri i tavolinës</Label>
+              <Input
+                id="tableName"
+                type="text"
+                value={newTableName}
+                onChange={(e) => setNewTableName(e.target.value)}
+                placeholder="p.sh. Tavolina 1"
+                required
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="tableCapacity">Numri i vendeve</Label>
+              <Input
+                id="tableCapacity"
+                type="number"
+                min={1}
+                max={999}
+                value={newTableCapacity}
+                onChange={(e) => setNewTableCapacity(Number(e.target.value) || 1)}
+              />
+            </div>
+            <div className="flex justify-end gap-2 pt-2">
+              <Button type="button" variant="outline" onClick={() => setIsAddTableOpen(false)}>
+                Anulo
+              </Button>
+              <Button type="submit" disabled={isSubmitting}>
+                {isSubmitting ? 'Duke shtuar...' : 'Shto Tavolinën'}
               </Button>
             </div>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {tables.map((table) => {
-              const assignedGroups = groups.filter(g => g.tableId === table.id);
-              const currentTotal = assignedGroups.reduce((acc, g) => acc + g.groupSize, 0);
-              const isOverCapacity = currentTotal > table.capacity;
-              const isFull = currentTotal === table.capacity;
-              const isOver = dragOverTableId === table.id;
-
-              return (
-                <Card
-                  key={table.id}
-                  onDragOver={(e) => { handleDragOver(e); setDragOverTableId(table.id); }}
-                  onDragLeave={() => setDragOverTableId(null)}
-                  onDrop={(e) => { handleDrop(e, table.id); setDragOverTableId(null); }}
-                  className={`rounded-xl bg-white border shadow-sm overflow-hidden hover:shadow-md transition-all ${
-                    isOver ? 'border-primary ring-2 ring-primary/20 scale-[1.02]' :
-                    isOverCapacity ? 'border-red-200 ring-1 ring-red-100' : 'border-slate-200'
-                  }`}
-                >
-                  <div className={`p-4 border-b flex items-center justify-between ${
-                    isOverCapacity ? 'bg-red-50/30 border-red-50' : 'border-slate-100'
-                  }`}>
-                    <div>
-                      <h3 className="font-bold text-slate-900 flex items-center gap-2">
-                        {table.name}
-                      </h3>
-                      <div className="flex items-center gap-1.5 mt-0.5">
-                        <span className={`h-2 w-2 rounded-full ${
-                          isOverCapacity ? 'bg-red-500 animate-pulse' : 
-                          isFull ? 'bg-slate-400' : 'bg-green-500'
-                        }`}></span>
-                        <p className={`text-xs font-medium ${isOverCapacity ? 'text-red-600 font-bold' : 'text-slate-500'}`}>
-                          {isOverCapacity ? 'MBI KAPACITET: ' : isFull ? 'PLOT: ' : 'Kapaciteti: '}
-                          <span className={isOverCapacity ? 'underline' : 'text-slate-700'}>
-                            {currentTotal} / {table.capacity}
-                          </span>
-                        </p>
-                      </div>
-                    </div>
-                    <Button variant="ghost" size="icon" className="text-slate-400 hover:text-slate-600"><MoreVertical size={18} /></Button>
-                  </div>
-                  
-                  <div className="p-4 space-y-2 min-h-[140px] bg-slate-50/50">
-                    {assignedGroups.length > 0 ? (
-                      assignedGroups.map(group => (
-                        <div 
-                          key={group.id} 
-                          draggable
-                          onDragStart={(e) => handleDragStart(e, group.id)}
-                          className="flex items-center justify-between rounded-lg bg-white border border-slate-100 px-3 py-2 text-sm shadow-sm group cursor-grab active:cursor-grabbing"
-                        >
-                          <span className={`font-medium truncate text-slate-700`}>
-                            {group.attendees[0]}
-                          </span>
-                          <div className="flex items-center gap-2">
-                            <span className={`text-xs font-bold text-slate-400`}>
-                              {group.groupSize}p
-                            </span>
-                            <Button
-                              variant="ghost"
-                              size="icon-xs"
-                              onClick={() => onAssign(group.id, undefined)}
-                              className="opacity-0 group-hover:opacity-100 text-red-400 hover:text-red-600 transition-all"
-                            >
-                              <X size={14} />
-                            </Button>
-                          </div>
-                        </div>
-                      ))
-                    ) : (
-                      <div className="flex flex-col items-center justify-center h-full text-slate-300 py-8">
-                        <Inbox size={32} className="mb-2" />
-                        <p className="text-xs font-medium text-slate-400">Lëshoni grupet këtu</p>
-                      </div>
-                    )}
-                  </div>
-                  {isOverCapacity && (
-                    <div className="px-4 py-2 bg-red-50 text-[10px] font-medium text-red-600 text-center uppercase tracking-widest">
-                      Veprimi i kërkuar: Zhvendosni {currentTotal - table.capacity} të ftuar
-                    </div>
-                  )}
-                </Card>
-              );
-            })}
-            <Button variant="ghost" className="rounded-xl border-2 border-dashed border-primary/30 hover:border-primary/60 hover:bg-primary/5 transition-all flex flex-col items-center justify-center min-h-[250px] group h-auto">
-              <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center text-primary mb-3 group-hover:scale-110 transition-transform">
-                <PlusCircle size={24} />
-              </div>
-              <p className="text-sm font-bold text-primary uppercase tracking-widest">Tavolinë e Re</p>
-            </Button>
-          </div>
-        </div>
-      </section>
-
-      <AnimatePresence>
-        {isAddTableOpen && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm">
-            <motion.div
-              initial={{ opacity: 0, scale: 0.95, y: 20 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.95, y: 20 }}
-              className="bg-white w-full max-w-md rounded-2xl shadow-2xl overflow-hidden"
-            >
-              <div className="p-5 border-b border-slate-100 flex items-center justify-between bg-primary/5">
-                <h3 className="text-lg font-bold flex items-center gap-2">
-                  <PlusCircle className="text-primary" size={22} />
-                  Shto Tavolinë
-                </h3>
-                <Button
-                  type="button"
-                  onClick={() => setIsAddTableOpen(false)}
-                  variant="ghost"
-                  size="icon"
-                >
-                  <X size={20} />
-                </Button>
-              </div>
-              <form onSubmit={handleAddTableSubmit} className="p-6 space-y-5">
-                <div className="space-y-2">
-                  <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Emri i tavolinës</label>
-                  <Input
-                    type="text"
-                    value={newTableName}
-                    onChange={(e) => setNewTableName(e.target.value)}
-                    className="h-12 bg-slate-50 border-slate-200 font-medium"
-                    placeholder="e.g. Tavolina 1"
-                    required
-                  />
-                </div>
-                <div className="space-y-2">
-                  <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Numri i vendeve</label>
-                  <Input
-                    type="number"
-                    min={1}
-                    max={999}
-                    value={newTableCapacity}
-                    onChange={(e) => setNewTableCapacity(Number(e.target.value) || 1)}
-                    className="h-12 bg-slate-50 border-slate-200 font-medium"
-                  />
-                </div>
-                <div className="flex gap-3 pt-2">
-                  <Button
-                    type="button"
-                    onClick={() => setIsAddTableOpen(false)}
-                    variant="ghost"
-                    className="flex-1 h-12 font-bold text-slate-500 hover:bg-slate-50"
-                  >
-                    Anulo
-                  </Button>
-                  <Button
-                    type="submit"
-                    disabled={isSubmitting}
-                    className="flex-[2] h-12 font-bold shadow-lg shadow-primary/20 hover:opacity-90 disabled:opacity-50 transition-all"
-                  >
-                    {isSubmitting ? 'Duke shtuar...' : 'Shto Tavolinën'}
-                  </Button>
-                </div>
-              </form>
-            </motion.div>
-          </div>
-        )}
-      </AnimatePresence>
+          </form>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

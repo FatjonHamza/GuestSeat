@@ -98,7 +98,17 @@ router.get(
     const invitation = db
       .prepare(
         `
-          SELECT i.*, e.name as event_name, e.date as event_date, e.time as event_time, e.venue_name, e.venue_address, e.venue_map_url, e.message, e.rsvp_deadline, e.theme
+          SELECT i.*,
+                 e.name as name,
+                 e.date as date,
+                 e.time as time,
+                 e.venue_name as venue_name,
+                 e.venue_address as venue_address,
+                 e.venue_map_url as venue_map_url,
+                 e.message as message,
+                 e.rsvp_deadline as rsvp_deadline,
+                 e.theme as theme,
+                 e.invitation_headline as invitation_heading
           FROM invitations i
           JOIN events e ON i.event_id = e.id
           WHERE i.token = ?
@@ -110,7 +120,13 @@ router.get(
       return res.status(404).json({ error: "Invitation not found" });
     }
 
-    res.json(mapToCamelCase(invitation));
+    const mapped = mapToCamelCase(invitation) as Record<string, unknown>;
+    mapped.invitationHeading =
+      (mapped.invitationHeading as string | null | undefined) ??
+      (mapped.invitationHeadline as string | null | undefined) ??
+      null;
+    delete mapped.invitationHeadline;
+    res.json(mapped);
   }),
 );
 
