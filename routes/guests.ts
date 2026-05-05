@@ -1,7 +1,7 @@
 import { Router } from "express";
 import { z } from "zod";
 import { v4 as uuidv4 } from "uuid";
-import { db, mapToCamelCase } from "../db";
+import { pool, mapToCamelCase } from "../db";
 import { syncHandler } from "../utils";
 import type { GuestGroupRow } from "../types/db";
 
@@ -23,7 +23,7 @@ const GuestPatchSchema = z.object({
 
 router.post(
   "/guests",
-  syncHandler((req, res) => {
+  syncHandler(async (req, res) => {
     const parsed = GuestSchema.parse({
       ...req.body,
       eventId: req.body.eventId ?? req.body.event_id,
@@ -31,19 +31,18 @@ router.post(
 
     const id = uuidv4();
     const createdAt = new Date().toISOString();
-    db.prepare(
-      `
-        INSERT INTO guest_groups (id, event_id, attendees, group_size, note, table_id, created_at)
-        VALUES (?, ?, ?, ?, ?, ?, ?)
-      `,
-    ).run(
-      id,
-      parsed.eventId,
-      JSON.stringify(parsed.attendees),
-      parsed.attendees.length,
-      parsed.note ?? null,
-      parsed.tableId ?? null,
-      createdAt,
+    await pool.query(
+      `INSERT INTO guest_groups (id, event_id, attendees, group_size, note, table_id, created_at)
+       VALUES ($1, $2, $3, $4, $5, $6, $7)`,
+      [
+        id,
+        parsed.eventId,
+        JSON.stringify(parsed.attendees),
+        parsed.attendees.length,
+        parsed.note ?? null,
+        parsed.tableId ?? null,
+        createdAt,
+      ],
     );
 
     res.json({ id, success: true });
@@ -52,17 +51,18 @@ router.post(
 
 router.get(
   "/events/:eventId/guests",
-  syncHandler((req, res) => {
-    const guests = db
-      .prepare("SELECT * FROM guest_groups WHERE event_id = ?")
-      .all(req.params.eventId) as GuestGroupRow[];
+  syncHandler(async (req, res) => {
+    const { rows } = await pool.query<GuestGroupRow>(
+      "SELECT * FROM guest_groups WHERE event_id = $1",
+      [req.params.eventId],
+    );
 
-    const mapped = mapToCamelCase(guests) as unknown as Array<
-      Record<string, unknown>
-    >;
+    const mapped = mapToCamelCase(rows) as unknown as Array<Record<string, unknown>>;
     const normalized = mapped.map((guest) => ({
       ...guest,
-      attendees: JSON.parse(String(guest.attendees ?? "[]")),
+      attendees: Array.isArray(guest.attendees)
+        ? guest.attendees
+        : JSON.parse(String(guest.attendees ?? "[]")),
     }));
 
     res.json(normalized);
@@ -71,12 +71,14 @@ router.get(
 
 router.patch(
   "/guests/:id",
-  syncHandler((req, res) => {
+  syncHandler(async (req, res) => {
     const id = req.params.id;
     const parsed = GuestPatchSchema.parse(req.body);
-    const existing = db
-      .prepare("SELECT * FROM guest_groups WHERE id = ?")
-      .get(id) as GuestGroupRow | undefined;
+    const { rows } = await pool.query<GuestGroupRow>(
+      "SELECT * FROM guest_groups WHERE id = $1",
+      [id],
+    );
+    const existing = rows[0];
 
     if (!existing) {
       return res.status(404).json({ error: "Guest group not found" });
@@ -85,18 +87,15 @@ router.patch(
     const attendees = parsed.attendees
       ? JSON.stringify(parsed.attendees)
       : existing.attendees;
-    const groupSize = parsed.attendees
-      ? parsed.attendees.length
-      : existing.group_size;
+    const groupSize = parsed.attendees ? parsed.attendees.length : existing.group_size;
     const note = parsed.note !== undefined ? parsed.note : existing.note;
-    const tableId =
-      parsed.tableId !== undefined ? parsed.tableId : existing.table_id;
-    const arrivedAt =
-      parsed.arrivedAt !== undefined ? parsed.arrivedAt : existing.arrived_at;
+    const tableId = parsed.tableId !== undefined ? parsed.tableId : existing.table_id;
+    const arrivedAt = parsed.arrivedAt !== undefined ? parsed.arrivedAt : existing.arrived_at;
 
-    db.prepare(
-      "UPDATE guest_groups SET attendees = ?, group_size = ?, note = ?, table_id = ?, arrived_at = ? WHERE id = ?",
-    ).run(attendees, groupSize, note ?? null, tableId ?? null, arrivedAt ?? null, id);
+    await pool.query(
+      "UPDATE guest_groups SET attendees = $1, group_size = $2, note = $3, table_id = $4, arrived_at = $5 WHERE id = $6",
+      [attendees, groupSize, note ?? null, tableId ?? null, arrivedAt ?? null, id],
+    );
 
     res.json({ success: true });
   }),
@@ -104,11 +103,12 @@ router.patch(
 
 router.delete(
   "/guests/:id",
-  syncHandler((req, res) => {
-    const result = db
-      .prepare("DELETE FROM guest_groups WHERE id = ?")
-      .run(req.params.id);
-    if (result.changes === 0) {
+  syncHandler(async (req, res) => {
+    const { rowCount } = await pool.query(
+      "DELETE FROM guest_groups WHERE id = $1",
+      [req.params.id],
+    );
+    if (rowCount === 0) {
       return res.status(404).json({ error: "Guest group not found" });
     }
     res.json({ success: true });
