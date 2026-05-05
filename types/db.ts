@@ -1,6 +1,8 @@
 export interface EventRow {
   id: string;
   name: string;
+  bride_name: string | null;
+  closing_message: string | null;
   date: string;
   time: string | null;
   invitation_headline: string | null;

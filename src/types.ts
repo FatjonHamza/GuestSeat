@@ -3,6 +3,8 @@ export type RSVPStatus = 'Draft' | 'Sent' | 'Responded';
 export interface EventDetails {
   id: string;
   name: string;
+  brideName?: string;
+  closingMessage?: string;
   date: string;
   time?: string;
   invitationHeading?: string;

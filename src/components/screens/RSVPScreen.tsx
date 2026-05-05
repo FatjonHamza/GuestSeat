@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { 
-  CheckCircle2, 
-  XCircle, 
-  Users, 
-  Calendar, 
-  MapPin, 
+import {
+  CheckCircle2,
+  XCircle,
+  Users,
+  Calendar,
+  MapPin,
   Send,
   PartyPopper,
   ArrowRight,
@@ -21,6 +21,35 @@ import { Textarea } from '@/components/ui/textarea';
 
 interface RSVPScreenProps {
   token: string;
+}
+
+function useCountdown(targetDate: string | undefined) {
+  const [timeLeft, setTimeLeft] = useState({ days: 0, hours: 0, minutes: 0, seconds: 0 });
+
+  useEffect(() => {
+    if (!targetDate) return;
+    const target = new Date(targetDate).getTime();
+
+    const tick = () => {
+      const diff = target - Date.now();
+      if (diff <= 0) {
+        setTimeLeft({ days: 0, hours: 0, minutes: 0, seconds: 0 });
+        return;
+      }
+      setTimeLeft({
+        days: Math.floor(diff / 86400000),
+        hours: Math.floor((diff % 86400000) / 3600000),
+        minutes: Math.floor((diff % 3600000) / 60000),
+        seconds: Math.floor((diff % 60000) / 1000),
+      });
+    };
+
+    tick();
+    const id = setInterval(tick, 1000);
+    return () => clearInterval(id);
+  }, [targetDate]);
+
+  return timeLeft;
 }
 
 export const RSVPScreen: React.FC<RSVPScreenProps> = ({ token }) => {
@@ -48,7 +77,8 @@ export const RSVPScreen: React.FC<RSVPScreenProps> = ({ token }) => {
   }, [token]);
 
   const currentTheme = invitation ? (THEMES.find(t => t.id === invitation.theme) || THEMES[0]) : THEMES[0];
-  const invitationData = invitation as (Invitation & EventDetails & { eventName?: string; eventDate?: string; eventTime?: string });
+  const invitationData = invitation as (Invitation & EventDetails & { eventName?: string; eventDate?: string; eventTime?: string; brideName?: string; closingMessage?: string });
+  const countdown = useCountdown(invitationData?.date || invitationData?.eventDate);
 
   const handleSubmit = async () => {
     if (!attendance) return;
@@ -89,12 +119,12 @@ export const RSVPScreen: React.FC<RSVPScreenProps> = ({ token }) => {
       <div className="max-w-xl w-full">
         <AnimatePresence mode="wait">
           {step === 'info' && (
-            <motion.div 
+            <motion.div
               key="info"
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -20 }}
-              className="rounded-[2rem] shadow-2xl overflow-hidden relative min-h-[700px] flex flex-col items-center justify-center text-center p-12 md:p-16"
+              className="rounded-[2rem] shadow-2xl overflow-hidden relative flex flex-col items-center text-center"
               style={{ backgroundColor: currentTheme.bg, color: currentTheme.text }}
             >
               {/* Background Decoration */}
@@ -106,70 +136,114 @@ export const RSVPScreen: React.FC<RSVPScreenProps> = ({ token }) => {
               {/* Vector Illustration */}
               <InvitationVector primary={currentTheme.primary} secondary={currentTheme.secondary} />
 
-              <div className="relative z-10 space-y-8 w-full">
-                <div className="space-y-4">
-                  <p className="font-bold uppercase tracking-[0.3em] text-sm" style={{ color: currentTheme.primary }}>
-                    {invitation.invitationHeading || 'Jeni të ftuar ne dasmen'}
+              <div className="relative z-10 w-full flex flex-col items-center divide-y" style={{ borderColor: currentTheme.accent }}>
+
+                {/* Section 1 — description */}
+                <motion.div className="w-full px-10 pt-10 pb-6" initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6, delay: 0.1 }}>
+                  <p className="text-base leading-relaxed opacity-80 mx-auto" style={{ width: '60%' }}>
+                    {invitation.invitationHeading || "Do të ishim të nderuar t'ju kishim me ne në këtë rast të veçantë."}
                   </p>
-                  <h3 className="text-6xl font-handwritten tracking-normal leading-tight">
-                    {invitationData.name || invitationData.eventName || 'Ngjarja Juaj'}
+                </motion.div>
+
+                {/* Section 2 — groom & bride */}
+                <motion.div className="w-full px-10 py-12 flex flex-col items-center gap-2" initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6, delay: 0.3 }}>
+                  <h3 className="text-7xl tracking-normal leading-tight" style={{ color: currentTheme.primary, fontFamily: "'Monsieur La Doulaise', cursive" }}>
+                    {invitationData.name || 'Dhëndri'}
                   </h3>
-                </div>
+                  <span className="text-6xl opacity-60" style={{ fontFamily: "'Monsieur La Doulaise', cursive" }}>&</span>
+                  <h3 className="text-7xl tracking-normal leading-tight" style={{ color: currentTheme.primary, fontFamily: "'Monsieur La Doulaise', cursive" }}>
+                    {invitationData.brideName || 'Nusja'}
+                  </h3>
+                </motion.div>
 
-                <div className="h-px w-20 mx-auto" style={{ backgroundColor: currentTheme.accent }} />
+                {/* Section 3 — second message block */}
+                <motion.div className="w-full px-10 py-10" initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6, delay: 0.5 }}>
+                  <p className="text-base leading-relaxed opacity-80 mx-auto" style={{ width: '60%' }}>
+                    {invitation.message || "Do të ishim të nderuar t'ju kishim me ne në këtë rast të veçantë."}
+                  </p>
+                </motion.div>
 
-                <p className="text-lg font-medium leading-relaxed opacity-80">
-                  Përshëndetje{' '}
-                  <span className="font-bold" style={{ color: currentTheme.primary }}>
-                    {invitation.inviteeName}
-                  </span>
-                  , {invitation.message || "Do të ishim të nderuar t'ju kishim me ne në këtë rast të veçantë."}
-                </p>
-                
-                <div className="grid grid-cols-1 gap-6 py-8 border-y" style={{ borderColor: currentTheme.accent }}>
-                  <div className="flex flex-col items-center gap-2">
-                    <Calendar size={24} style={{ color: currentTheme.primary }} />
-                    <p className="font-bold text-xl">
-                      {new Date(invitationData.date || invitationData.eventDate || new Date().toISOString()).toLocaleDateString('sq-AL', { dateStyle: 'full' })}
+                {/* Section 4 — date / time / location */}
+                <motion.div className="w-full px-10 py-10 flex flex-col items-center gap-3" initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6, delay: 0.7 }}>
+                  {(() => {
+                    const DAYS_SQ = ['E Diel', 'E Hënë', 'E Martë', 'E Mërkurë', 'E Enjte', 'E Premte', 'E Shtunë'];
+                    const MONTHS_SQ = ['Janar', 'Shkurt', 'Mars', 'Prill', 'Maj', 'Qershor', 'Korrik', 'Gusht', 'Shtator', 'Tetor', 'Nëntor', 'Dhjetor'];
+                    const d = new Date(invitationData.date || invitationData.eventDate || new Date().toISOString());
+                    return (
+                      <div className="flex items-baseline justify-center gap-3 flex-wrap">
+                        <span className="text-sm opacity-60">{DAYS_SQ[d.getDay()]}</span>
+                        <span className="text-5xl font-bold" style={{ color: currentTheme.primary }}>{d.getDate()}</span>
+                        <span className="text-sm opacity-60">{MONTHS_SQ[d.getMonth()]}</span>
+                      </div>
+                    );
+                  })()}
+
+                  {(invitationData.time || invitationData.eventTime) && (
+                    <p className="text-sm opacity-60 flex items-center gap-1">
+                      <Clock size={13} />
+                      {invitationData.time || invitationData.eventTime}
                     </p>
-                    {(invitationData.time || invitationData.eventTime) && (
-                      <p className="opacity-60 flex items-center gap-1 text-sm">
-                        <Clock size={14} /> {invitationData.time || invitationData.eventTime}
-                      </p>
-                    )}
-                  </div>
-                  
-                  <div className="flex flex-col items-center gap-2">
-                    <MapPin size={24} style={{ color: currentTheme.primary }} />
-                    <p className="font-bold text-xl">{invitation.venueName}</p>
-                    {invitation.venueAddress && (
-                      invitation.venueMapUrl ? (
-                        <a 
-                          href={invitation.venueMapUrl} 
-                          target="_blank" 
-                          rel="noopener noreferrer"
-                          className="flex items-center gap-2 opacity-60 hover:opacity-100 transition-opacity group"
-                          title="Hape në Harta"
-                        >
-                          <p className="text-sm group-hover:underline">{invitation.venueAddress}</p>
-                          <MapPin size={14} style={{ color: currentTheme.primary }} />
-                        </a>
-                      ) : (
-                        <p className="opacity-60 text-sm">{invitation.venueAddress}</p>
-                      )
-                    )}
-                  </div>
-                </div>
+                  )}
 
-                <Button
-                  onClick={() => setStep('form')}
-                  size="lg"
-                  className="w-full flex items-center justify-center gap-2"
-                  style={{ backgroundColor: currentTheme.primary, color: currentTheme.bg }}
-                >
-                  Përgjigju ftesës
-                  <ArrowRight size={20} />
-                </Button>
+                  <p className="font-semibold text-lg">{invitation.venueName}</p>
+
+                  {invitation.venueAddress && (
+                    invitation.venueMapUrl ? (
+                      <a
+                        href={invitation.venueMapUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex items-center gap-1 opacity-60 hover:opacity-100 transition-opacity text-sm"
+                      >
+                        <MapPin size={13} style={{ color: currentTheme.primary }} />
+                        <span className="hover:underline">{invitation.venueAddress}</span>
+                      </a>
+                    ) : (
+                      <p className="text-sm opacity-60">{invitation.venueAddress}</p>
+                    )
+                  )}
+                </motion.div>
+
+                {/* Section 5 — countdown */}
+                <motion.div className="w-full px-10 py-10 flex flex-col items-center gap-4" initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6, delay: 0.9 }}>
+                  <p className="text-xs font-bold uppercase tracking-[0.25em] opacity-50">Numërim Mbrapsht</p>
+                  <div className="flex items-start justify-center gap-4">
+                    {[
+                      { label: 'Ditë', value: countdown.days },
+                      { label: 'Orë', value: countdown.hours },
+                      { label: 'Min', value: countdown.minutes },
+                      { label: 'Sek', value: countdown.seconds },
+                    ].map(({ label, value }, i) => (
+                      <React.Fragment key={label}>
+                        {i > 0 && <span className="text-2xl font-bold opacity-30 mt-1">-</span>}
+                        <div className="flex flex-col items-center gap-1">
+                          <span className="text-3xl font-bold tabular-nums" style={{ color: currentTheme.primary }}>
+                            {String(value).padStart(2, '0')}
+                          </span>
+                          <span className="text-[10px] uppercase tracking-widest opacity-50">{label}</span>
+                        </div>
+                      </React.Fragment>
+                    ))}
+                  </div>
+                </motion.div>
+
+                {/* Section 6 — closing message + CTA */}
+                <motion.div className="w-full px-10 py-10 flex flex-col items-center gap-8" initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6, delay: 1.1 }}>
+                  <p className="text-base leading-relaxed opacity-80 mx-auto" style={{ width: '60%' }}>
+                    {invitationData.closingMessage || invitation.message || "Do të ishim të nderuar t'ju kishim me ne në këtë rast të veçantë."}
+                  </p>
+
+                  <Button
+                    onClick={() => setStep('form')}
+                    size="lg"
+                    className="w-full flex items-center justify-center gap-2"
+                    style={{ backgroundColor: currentTheme.primary, color: currentTheme.bg }}
+                  >
+                    Përgjigju ftesës
+                    <ArrowRight size={20} />
+                  </Button>
+                </motion.div>
+
               </div>
             </motion.div>
           )}

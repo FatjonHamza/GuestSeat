@@ -20,9 +20,11 @@ interface InvitationTemplateScreenProps {
 export const InvitationTemplateScreen: React.FC<InvitationTemplateScreenProps> = ({ eventDetails, onUpdate }) => {
   const [formData, setFormData] = useState<Partial<EventDetails>>({
     name: eventDetails.name,
+    brideName: eventDetails.brideName || '',
+    closingMessage: eventDetails.closingMessage || '',
     date: eventDetails.date,
     time: eventDetails.time || '',
-    invitationHeading: eventDetails.invitationHeading || 'Jeni të ftuar ne dasmen',
+    invitationHeading: eventDetails.invitationHeading || '',
     venueName: eventDetails.venueName,
     venueAddress: eventDetails.venueAddress || '',
     venueMapUrl: eventDetails.venueMapUrl || '',
@@ -39,9 +41,11 @@ export const InvitationTemplateScreen: React.FC<InvitationTemplateScreenProps> =
   useEffect(() => {
     setFormData({
       name: eventDetails.name,
+      brideName: eventDetails.brideName || '',
+      closingMessage: eventDetails.closingMessage || '',
       date: eventDetails.date,
       time: eventDetails.time || '',
-      invitationHeading: eventDetails.invitationHeading || 'Jeni të ftuar ne dasmen',
+      invitationHeading: eventDetails.invitationHeading || '',
       venueName: eventDetails.venueName,
       venueAddress: eventDetails.venueAddress || '',
       venueMapUrl: eventDetails.venueMapUrl || '',
@@ -157,35 +161,50 @@ export const InvitationTemplateScreen: React.FC<InvitationTemplateScreenProps> =
             </CardHeader>
             <CardContent className="space-y-5">
             
+            <div className="space-y-2">
+              <Label htmlFor="invitationHeading">Përshkrimi i ftesës</Label>
+              <Textarea
+                id="invitationHeading"
+                name="invitationHeading"
+                value={formData.invitationHeading || ''}
+                onChange={handleChange}
+                rows={3}
+                className="resize-none"
+                placeholder="p.sh. Jeni të ftuar në dasmën tonë të veçantë..."
+              />
+            </div>
+
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-2 md:col-span-2">
-                <Label htmlFor="invitationHeading">Titulli i sipërm i ftesës</Label>
-                <Input
-                  id="invitationHeading"
-                  name="invitationHeading"
-                  value={formData.invitationHeading || ''}
-                  onChange={handleChange}
-                  placeholder="p.sh. Jeni të ftuar ne dasmen"
-                />
-              </div>
               <div className="space-y-2">
-                <Label htmlFor="name">Emri i Ngjarjes</Label>
+                <Label htmlFor="name">Dhëndri (Groom)</Label>
                 <Input
                   id="name"
                   name="name"
-                  value={formData.name}
+                  value={formData.name || ''}
                   onChange={handleChange}
+                  placeholder="Emri i dhëndrit"
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="venueName">Emri i Vendit</Label>
+                <Label htmlFor="brideName">Nusja (Bride)</Label>
                 <Input
-                  id="venueName"
-                  name="venueName"
-                  value={formData.venueName}
+                  id="brideName"
+                  name="brideName"
+                  value={formData.brideName || ''}
                   onChange={handleChange}
+                  placeholder="Emri i nuses"
                 />
               </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="venueName">Emri i Vendit</Label>
+              <Input
+                id="venueName"
+                name="venueName"
+                value={formData.venueName || ''}
+                onChange={handleChange}
+              />
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -242,15 +261,28 @@ export const InvitationTemplateScreen: React.FC<InvitationTemplateScreenProps> =
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="message">Mesazhi i Ftesës</Label>
+              <Label htmlFor="message">Përshkrimi i mesit (seksioni 3)</Label>
               <Textarea
                 id="message"
                 name="message"
-                value={formData.message}
+                value={formData.message || ''}
                 onChange={handleChange}
-                rows={4}
+                rows={3}
                 className="resize-none"
-                placeholder="Shkruani një mesazh mirëseardhjeje të ngrohtë për të ftuarit tuaj..."
+                placeholder="Teksti që shfaqet pas emrave të çiftit..."
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="closingMessage">Përshkrimi i fundit (seksioni 6)</Label>
+              <Textarea
+                id="closingMessage"
+                name="closingMessage"
+                value={formData.closingMessage || ''}
+                onChange={handleChange}
+                rows={3}
+                className="resize-none"
+                placeholder="Teksti që shfaqet para butonit të përgjigjes..."
               />
             </div>
 
@@ -270,8 +302,11 @@ export const InvitationTemplateScreen: React.FC<InvitationTemplateScreenProps> =
 
         {/* Preview Side */}
         <div className={`space-y-6 ${!previewMode ? 'hidden lg:block' : ''}`}>
-          <div 
-            className="rounded-[2rem] p-12 md:p-16 shadow-2xl relative overflow-hidden min-h-[700px] flex flex-col items-center justify-center text-center transition-colors duration-500"
+          <motion.div
+            key={formData.theme}
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="rounded-[2rem] shadow-2xl overflow-hidden relative flex flex-col items-center text-center transition-colors duration-500"
             style={{ backgroundColor: currentTheme.bg, color: currentTheme.text }}
           >
             {/* Background Decoration */}
@@ -283,69 +318,119 @@ export const InvitationTemplateScreen: React.FC<InvitationTemplateScreenProps> =
             {/* Vector Illustration */}
             <InvitationVector primary={currentTheme.primary} secondary={currentTheme.secondary} />
 
-            <motion.div 
-              key={formData.theme}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="relative z-10 max-w-md w-full space-y-8"
-            >
-              <div className="space-y-4">
-                <p className="font-bold uppercase tracking-[0.3em] text-sm" style={{ color: currentTheme.primary }}>
-                  {formData.invitationHeading || 'Jeni të ftuar ne dasmen'}
+            <div className="relative z-10 w-full flex flex-col items-center divide-y" style={{ borderColor: currentTheme.accent }}>
+
+              {/* Section 1 — description */}
+              <div className="w-full px-10 pt-10 pb-6">
+                <p className="text-base leading-relaxed opacity-80 mx-auto" style={{ width: '60%' }}>
+                  {formData.invitationHeading || "Do të ishim të nderuar t'ju kishim me ne në këtë rast të veçantë."}
                 </p>
-                <h3 className="text-6xl font-handwritten tracking-normal leading-tight">{formData.name || 'Ngjarja Juaj'}</h3>
               </div>
 
-              <div className="h-px w-20 mx-auto" style={{ backgroundColor: currentTheme.accent }} />
+              {/* Section 2 — groom & bride */}
+              <div className="w-full px-10 py-12 flex flex-col items-center gap-2">
+                <h3 className="text-7xl tracking-normal leading-tight" style={{ color: currentTheme.primary, fontFamily: "'Monsieur La Doulaise', cursive" }}>
+                  {formData.name || 'Dhëndri'}
+                </h3>
+                <span className="text-6xl opacity-60" style={{ fontFamily: "'Monsieur La Doulaise', cursive" }}>&</span>
+                <h3 className="text-7xl tracking-normal leading-tight" style={{ color: currentTheme.primary, fontFamily: "'Monsieur La Doulaise', cursive" }}>
+                  {formData.brideName || 'Nusja'}
+                </h3>
+              </div>
 
-              <p className="font-medium leading-relaxed italic opacity-80">
-                "{formData.message || 'Do të ishim të nderuar t\'ju kishim me ne në këtë rast të veçantë.'}"
-              </p>
+              {/* Section 3 — second message */}
+              <div className="w-full px-10 py-10">
+                <p className="text-base leading-relaxed opacity-80 mx-auto" style={{ width: '60%' }}>
+                  {formData.message || "Do të ishim të nderuar t'ju kishim me ne në këtë rast të veçantë."}
+                </p>
+              </div>
 
-              <div className="grid grid-cols-1 gap-6 py-8 border-y" style={{ borderColor: currentTheme.accent }}>
-                <div className="flex flex-col items-center gap-2">
-                  <Calendar size={24} style={{ color: currentTheme.primary }} />
-                  <p className="font-bold text-xl">{formData.date ? new Date(formData.date).toLocaleDateString('sq-AL', { dateStyle: 'full' }) : 'Data do të caktohet'}</p>
-                  {formData.time && <p className="opacity-60 flex items-center gap-1"><Clock size={14} /> {formData.time}</p>}
-                </div>
-                
-                <div className="flex flex-col items-center gap-2">
-                  <MapPin size={24} style={{ color: currentTheme.primary }} />
-                  <p className="font-bold text-xl">{formData.venueName || 'Vendi do të caktohet'}</p>
-                  {formData.venueAddress && (
-                    formData.venueMapUrl ? (
-                      <a 
-                        href={formData.venueMapUrl} 
-                        target="_blank" 
-                        rel="noopener noreferrer"
-                        className="flex items-center gap-2 opacity-60 hover:opacity-100 transition-opacity group"
-                      >
-                        <p className="text-sm group-hover:underline">{formData.venueAddress}</p>
-                        <MapPin size={14} style={{ color: currentTheme.primary }} />
-                      </a>
-                    ) : (
-                      <p className="opacity-60 text-sm">{formData.venueAddress}</p>
-                    )
-                  )}
+              {/* Section 4 — date / time / location */}
+              <div className="w-full px-10 py-10 flex flex-col items-center gap-3">
+                {formData.date ? (() => {
+                  const DAYS_SQ = ['E Diel', 'E Hënë', 'E Martë', 'E Mërkurë', 'E Enjte', 'E Premte', 'E Shtunë'];
+                  const MONTHS_SQ = ['Janar', 'Shkurt', 'Mars', 'Prill', 'Maj', 'Qershor', 'Korrik', 'Gusht', 'Shtator', 'Tetor', 'Nëntor', 'Dhjetor'];
+                  const d = new Date(formData.date);
+                  return (
+                    <div className="flex items-baseline justify-center gap-3 flex-wrap">
+                      <span className="text-sm opacity-60">{DAYS_SQ[d.getDay()]}</span>
+                      <span className="text-5xl font-bold" style={{ color: currentTheme.primary }}>{d.getDate()}</span>
+                      <span className="text-sm opacity-60">{MONTHS_SQ[d.getMonth()]}</span>
+                    </div>
+                  );
+                })() : (
+                  <p className="text-sm opacity-40">Data do të caktohet</p>
+                )}
+
+                {formData.time && (
+                  <p className="text-sm opacity-60 flex items-center gap-1">
+                    <Clock size={13} /> {formData.time}
+                  </p>
+                )}
+
+                <p className="font-semibold text-lg">{formData.venueName || 'Vendi do të caktohet'}</p>
+
+                {formData.venueAddress && (
+                  formData.venueMapUrl ? (
+                    <a
+                      href={formData.venueMapUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center gap-1 opacity-60 hover:opacity-100 transition-opacity text-sm"
+                    >
+                      <MapPin size={13} style={{ color: currentTheme.primary }} />
+                      <span className="hover:underline">{formData.venueAddress}</span>
+                    </a>
+                  ) : (
+                    <p className="text-sm opacity-60">{formData.venueAddress}</p>
+                  )
+                )}
+              </div>
+
+              {/* Section 5 — countdown */}
+              <div className="w-full px-10 py-10 flex flex-col items-center gap-4">
+                <p className="text-xs font-bold uppercase tracking-[0.25em] opacity-50">Numërim Mbrapsht</p>
+                <div className="flex items-start justify-center gap-4">
+                  {[
+                    { label: 'Ditë', value: '--' },
+                    { label: 'Orë', value: '--' },
+                    { label: 'Min', value: '--' },
+                    { label: 'Sek', value: '--' },
+                  ].map(({ label, value }, i) => (
+                    <React.Fragment key={label}>
+                      {i > 0 && <span className="text-2xl font-bold opacity-30 mt-1">-</span>}
+                      <div className="flex flex-col items-center gap-1">
+                        <span className="text-3xl font-bold tabular-nums" style={{ color: currentTheme.primary }}>{value}</span>
+                        <span className="text-[10px] uppercase tracking-widest opacity-50">{label}</span>
+                      </div>
+                    </React.Fragment>
+                  ))}
                 </div>
               </div>
 
-              <div className="space-y-4">
+              {/* Section 6 — closing message + CTA */}
+              <div className="w-full px-10 py-10 flex flex-col items-center gap-8">
+                <p className="text-base leading-relaxed opacity-80 mx-auto" style={{ width: '60%' }}>
+                  {formData.closingMessage || formData.message || "Do të ishim të nderuar t'ju kishim me ne në këtë rast të veçantë."}
+                </p>
+
                 <Button
                   size="lg"
                   className="w-full"
-                  style={{ backgroundColor: currentTheme.primary, color: currentTheme.bg, boxShadow: `0 10px 30px ${currentTheme.accent}` }}
+                  style={{ backgroundColor: currentTheme.primary, color: currentTheme.bg }}
                 >
                   Përgjigju ftesës
                 </Button>
+
                 {formData.rsvpDeadline && (
                   <p className="text-[10px] font-bold opacity-40 uppercase tracking-widest">
                     Ju lutem përgjigjuni deri më {new Date(formData.rsvpDeadline).toLocaleDateString('sq-AL')}
                   </p>
                 )}
               </div>
-            </motion.div>
-          </div>
+
+            </div>
+          </motion.div>
           <p className="text-center text-xs font-bold text-slate-400 uppercase tracking-widest">
             Ky është një parashikim i faqes së ftesës për të ftuarit
           </p>

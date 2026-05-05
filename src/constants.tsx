@@ -55,19 +55,14 @@ export const THEMES: ThemeConfig[] = [
 ];
 
 export const InvitationVector = ({ primary, secondary }: { primary: string; secondary: string }) => (
-  <svg viewBox="0 0 400 600" className="absolute inset-0 w-full h-full opacity-40 pointer-events-none">
-    {/* Geometric Frame */}
-    <path 
-      d="M20,20 L380,20 L380,580 L20,580 Z M40,40 L360,40 L360,560 L40,560 Z" 
-      fill="none" 
-      stroke={primary} 
-      strokeWidth="1" 
-      opacity="0.3"
-    />
-    <path 
-      d="M0,100 L100,0 M300,0 L400,100 M400,500 L300,600 M100,600 L0,500" 
-      stroke={primary} 
-      strokeWidth="2" 
+  <svg viewBox="0 0 400 600" preserveAspectRatio="none" className="absolute inset-0 w-full h-full opacity-40 pointer-events-none">
+    {/* Geometric Frame — outer and inner rect scale with content */}
+    <rect x="12" y="12" width="376" height="576" fill="none" stroke={primary} strokeWidth="1" opacity="0.3" />
+    <rect x="28" y="28" width="344" height="544" fill="none" stroke={primary} strokeWidth="1" opacity="0.3" />
+    <path
+      d="M0,100 L100,0 M300,0 L400,100 M400,500 L300,600 M100,600 L0,500"
+      stroke={primary}
+      strokeWidth="2"
       opacity="0.5"
     />
     
