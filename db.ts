@@ -32,12 +32,6 @@ export function mapToCamelCase<T>(value: T): T {
 
 const migrations: string[] = [
   `
-    CREATE TABLE IF NOT EXISTS migrations (
-      version INTEGER PRIMARY KEY,
-      run_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
-    );
-  `,
-  `
     CREATE TABLE IF NOT EXISTS events (
       id TEXT PRIMARY KEY,
       name TEXT NOT NULL,
