@@ -3,9 +3,17 @@ import pg from "pg";
 
 const { Pool } = pg;
 
+if (!process.env.DATABASE_URL) {
+  throw new Error("DATABASE_URL environment variable is not set");
+}
+
 export const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
   ssl: process.env.NODE_ENV === "production" ? { rejectUnauthorized: false } : false,
+});
+
+pool.on("error", (err) => {
+  console.error("Unexpected database pool error", err);
 });
 
 export function mapToCamelCase<T>(value: T): T {
@@ -121,23 +129,21 @@ export async function runMigrations(): Promise<void> {
     const version = i + 1;
     if (applied.has(version)) continue;
 
+    const client = await pool.connect();
     try {
-      await pool.query(migrations[i]);
-      await pool.query(
+      await client.query("BEGIN");
+      await client.query(migrations[i]);
+      await client.query(
         "INSERT INTO migrations (version, run_at) VALUES ($1, CURRENT_TIMESTAMP)",
         [version],
       );
+      await client.query("COMMIT");
       console.log(`Applied migration v${version}`);
-    } catch (error) {
-      const message = error instanceof Error ? error.message : String(error);
-      if (message.includes("already exists")) {
-        await pool.query(
-          "INSERT INTO migrations (version, run_at) VALUES ($1, CURRENT_TIMESTAMP)",
-          [version],
-        );
-        continue;
-      }
-      throw error;
+    } catch (e) {
+      await client.query("ROLLBACK");
+      throw e;
+    } finally {
+      client.release();
     }
   }
 }
