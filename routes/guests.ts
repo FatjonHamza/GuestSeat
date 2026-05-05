@@ -81,7 +81,8 @@ router.patch(
     const existing = rows[0];
 
     if (!existing) {
-      return res.status(404).json({ error: "Guest group not found" });
+      res.status(404).json({ error: "Guest group not found" });
+      return;
     }
 
     const attendees = parsed.attendees
@@ -108,8 +109,9 @@ router.delete(
       "DELETE FROM guest_groups WHERE id = $1",
       [req.params.id],
     );
-    if (rowCount === 0) {
-      return res.status(404).json({ error: "Guest group not found" });
+    if ((rowCount ?? 0) === 0) {
+      res.status(404).json({ error: "Guest group not found" });
+      return;
     }
     res.json({ success: true });
   }),

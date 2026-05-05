@@ -60,7 +60,7 @@ async function authenticateClient(email: string, password: string) {
     return { status: 403, body: { error: "Aksesi për këtë llogari ka skaduar." } };
   }
 
-  const mapped = mapToCamelCase(client) as Record<string, unknown>;
+  const mapped = mapToCamelCase(client) as unknown as Record<string, unknown>;
   delete mapped.password;
   return { status: 200, body: mapped };
 }
@@ -80,7 +80,7 @@ router.get(
     const { rows } = await pool.query<ClientRow>(
       "SELECT * FROM clients ORDER BY created_at DESC",
     );
-    const mapped = mapToCamelCase(rows) as Array<Record<string, unknown>>;
+    const mapped = mapToCamelCase(rows) as unknown as Array<Record<string, unknown>>;
     const normalized = mapped.map((client) => ({
       ...client,
       isActive: Boolean(client.isActive),
@@ -94,7 +94,7 @@ router.post(
   syncHandler(async (req, res) => {
     const parsed = ClientLoginSchema.parse(req.body);
     const result = await authenticateClient(parsed.email, parsed.password);
-    return res.status(result.status).json(result.body);
+    res.status(result.status).json(result.body);
   }),
 );
 
@@ -106,7 +106,7 @@ router.get(
       password: req.query.password,
     });
     const result = await authenticateClient(parsed.email, parsed.password);
-    return res.status(result.status).json(result.body);
+    res.status(result.status).json(result.body);
   }),
 );
 
@@ -201,7 +201,8 @@ router.patch(
     const existing = rows[0];
 
     if (!existing) {
-      return res.status(404).json({ error: "Client not found" });
+      res.status(404).json({ error: "Client not found" });
+      return;
     }
 
     await pool.query(
@@ -232,8 +233,9 @@ router.delete(
       "DELETE FROM clients WHERE id = $1",
       [req.params.id],
     );
-    if (rowCount === 0) {
-      return res.status(404).json({ error: "Client not found" });
+    if ((rowCount ?? 0) === 0) {
+      res.status(404).json({ error: "Client not found" });
+      return;
     }
     res.json({ success: true });
   }),

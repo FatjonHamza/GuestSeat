@@ -62,7 +62,8 @@ router.delete(
   syncHandler(async (req, res) => {
     const id = (req.params.id || "").trim();
     if (!id) {
-      return res.status(400).json({ error: "Invitation id required" });
+      res.status(400).json({ error: "Invitation id required" });
+      return;
     }
 
     const { rows } = await pool.query<{ id: string }>(
@@ -70,7 +71,8 @@ router.delete(
       [id],
     );
     if (!rows[0]) {
-      return res.status(404).json({ error: "Invitation not found" });
+      res.status(404).json({ error: "Invitation not found" });
+      return;
     }
 
     const client = await pool.connect();
@@ -115,7 +117,8 @@ router.get(
     const invitation = rows[0] as Record<string, unknown> | undefined;
 
     if (!invitation) {
-      return res.status(404).json({ error: "Invitation not found" });
+      res.status(404).json({ error: "Invitation not found" });
+      return;
     }
 
     const mapped = mapToCamelCase(invitation) as Record<string, unknown>;
@@ -139,7 +142,8 @@ router.post(
     const invitation = rows[0];
 
     if (!invitation) {
-      return res.status(404).json({ error: "Invitation not found" });
+      res.status(404).json({ error: "Invitation not found" });
+      return;
     }
 
     if (parsed.attendance === "No") {
@@ -147,7 +151,8 @@ router.post(
         "UPDATE invitations SET status = 'Responded', responded_at = $1 WHERE id = $2",
         [new Date().toISOString(), invitation.id],
       );
-      return res.json({ success: true, message: "RSVP received" });
+      res.json({ success: true, message: "RSVP received" });
+      return;
     }
 
     const guestGroupId = uuidv4();
