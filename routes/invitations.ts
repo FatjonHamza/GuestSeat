@@ -169,7 +169,7 @@ router.post(
           guestGroupId,
           invitation.event_id,
           invitation.id,
-          JSON.stringify(parsed.attendees),
+          parsed.attendees,
           groupSize,
           parsed.note ?? null,
           createdAt,

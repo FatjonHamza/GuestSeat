@@ -37,7 +37,7 @@ router.post(
       [
         id,
         parsed.eventId,
-        JSON.stringify(parsed.attendees),
+        parsed.attendees,
         parsed.attendees.length,
         parsed.note ?? null,
         parsed.tableId ?? null,
@@ -85,9 +85,7 @@ router.patch(
       return;
     }
 
-    const attendees = parsed.attendees
-      ? JSON.stringify(parsed.attendees)
-      : existing.attendees;
+    const attendees = parsed.attendees ?? existing.attendees;
     const groupSize = parsed.attendees ? parsed.attendees.length : existing.group_size;
     const note = parsed.note !== undefined ? parsed.note : existing.note;
     const tableId = parsed.tableId !== undefined ? parsed.tableId : existing.table_id;
